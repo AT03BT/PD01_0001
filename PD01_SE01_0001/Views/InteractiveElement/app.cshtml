@@ -1,0 +1,419 @@
+﻿@*
+    PageLayout/IteractiveElement8.cshtml
+    Version: 0.2.5 // Version increment for Page 8 (matches last functional state)
+    (c) 2024, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
+    https://creativecommons.org/licenses/by/4.0/
+*@
+@{
+    ViewData["Title"] = "Drawing Application";
+    ViewData["UseFluidContainer"] = true;
+    ViewData["UseMainFlexGrow"] = true;
+    ViewData["HideFooter"] = true;
+}
+
+<div class="drawing-app-view-wrapper">
+    <div class="drawing-app-main-structure container-fluid p-0">
+        <div class="row g-0 flex-grow-1">
+
+            <aside class="col-md-2 drawing-app-col bg-light border-end">
+                <div class="drawing-app-col-padding-wrapper">
+
+                    <div class="drawing-controls-section mb-4">
+                        <h2 class="h6 mb-3 text-muted fw-bold">Tools</h2>
+                        <nav class="drawing-app-controls-sidebar">
+                            <div class="shape-table">
+                                <ul class="menu-btns">
+                                    <li><button class="drawing-button" data-shape-class="sp01_pt01_0001">Point</button></li>
+                                    <li><button class="drawing-button" data-shape-class="sp01_ln01_0001">Line</button></li>
+                                    <li><button class="drawing-button" data-shape-class="sp01_cc01_0001">Circle</button></li>
+                                    <li><button class="drawing-button" data-shape-class="sp01_rt01_0001">Rectangle</button></li>
+                                    <li><button class="drawing-button" data-shape-class="cs01_pa01_0001">Path</button></li>
+                                </ul>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Region Select Tool"><small>Select</small></button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Inspect Tool"><small>Inspect</small></button>
+                        </nav>
+                    </div>
+
+                    <div class="component-items-section">
+                        <h2 class="h5 mb-3">Components</h2>
+                        <p class="small">Component items would go here...</p>
+                        <ul class="list-unstyled">
+                            <li class="p-2 mb-1 bg-white rounded border shadow-sm small">Shape Library</li>
+                            <li class="p-2 mb-1 bg-white rounded border shadow-sm small">Layer Manager</li>
+                            <li class="p-2 mb-1 bg-white rounded border shadow-sm small">Asset Browser</li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-auto small text-muted pt-2">Sidebar Footer</div>
+                </div>
+            </aside>
+
+            <div class="col-md-7 drawing-app-col p-0">
+                <div class="drawing-app-center-content">
+                    <div class="drawing-app-canvas-container">
+
+                        <details class="resolution-selector">
+                            <summary id="btn-resolution-summary-app" class="btn btn-sm btn-outline-secondary">800x600</summary>
+                            <div class="resolution-dropdown-content shadow-sm">
+                                <a href="#" class="dropdown-item small" data-width="640" data-height="480">640x480</a>
+                                <a href="#" class="dropdown-item small" data-width="800" data-height="600">800x600</a>
+                                <a href="#" class="dropdown-item small" data-width="1024" data-height="768">1024x768</a>
+                                <a href="#" class="dropdown-item small" data-width="1200" data-height="900">1200x900</a>
+                                <a href="#" class="dropdown-item small" data-width="1920" data-height="1080">1920x1080</a>
+                            </div>
+                        </details>
+
+                        <svg id="drawing-canvas-app" width="800" height="600" class="border bg-white shadow-sm">
+                            <g id="background-layer"></g>
+                            <g id="layer1">
+                                <circle cx="200" cy="150" r="50" fill="lightblue" />
+                                <rect x="50" y="50" width="100" height="80" fill="orange" />
+                            </g>
+                            <g id="layer2">
+                            </g>
+                            <g id="layer3">
+                            </g>
+                            <g id="layer4">
+                            </g>
+                            <g id="layer5">
+                            </g>
+                            <g id="foreground-layer">
+                                <circle cx="200" cy="150" r="50" fill="lightblue" />
+                                <rect x="50" y="50" width="100" height="80" fill="orange" />
+                                <svg width="400" height="200">
+                                    <line x1="50" y1="100" x2="350" y2="100" stroke="black" stroke-width="5" stroke-dasharray="10 20">
+                                        <animate attributeName="stroke-dashoffset" from="0" to="30" dur="3s" repeatCount="indefinite" />
+                                    </line>
+                                </svg>
+                            </g>
+                            <g id="construction-layer"></g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="col-md-3 drawing-app-col bg-light border-start">
+                <div class="drawing-app-col-padding-wrapper">
+                    <h2 class="h5 mb-3">Properties</h2>
+                    <p class="small">Property editor for selected component/tool...</p>
+                    <div class="mb-2">
+                        <label for="stroke-color-app" class="form-label small visually-hidden">Stroke:</label>
+                        <input type="color" class="form-control form-control-sm" id="stroke-color-app" value="#000000" title="Stroke Color">
+                    </div>
+                    <div class="mb-2">
+                        <label for="fill-color-app" class="form-label small visually-hidden">Fill:</label>
+                        <input type="color" class="form-control form-control-sm" id="fill-color-app" value="#ffffff" title="Fill Color">
+                    </div>
+                    <div class="mb-2">
+                        <label for="stroke-width-app" class="form-label small visually-hidden">Width:</label>
+                        <input type="number" class="form-control form-control-sm" id="stroke-width-app" value="2" min="1" title="Stroke Width">
+                    </div>
+                    <div class="mt-auto small text-muted pt-2">Property Footer</div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* ... (existing styles) ... */
+        .drawing-app-view-wrapper {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1; /* MODIFIED: Use flex-grow instead of height: 100% */
+            min-height: 0; /* ADDED: Important for nested flex containers that grow, prevents them from overflowing their parent if their content is also flex-growing */
+            /* This helps the browser correctly calculate the available space. */
+        }
+
+        /* Main structure of our drawing app (holds the 3-column row) */
+        .drawing-app-main-structure {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+            .drawing-app-main-structure > .row {
+                min-height: 0; /* Fix for flex-grow-1 in Bootstrap/browser versions */
+                width: 100%;
+                /* The flex-grow-1 class is applied directly to the row in the HTML */
+            }
+
+        /* Styling for individual columns (component, main content, property) */
+        .drawing-app-col {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* Entire column scrolls if content overflows */
+            height: 100%;
+        }
+
+        /* Wrapper for the actual content within each column to manage padding and internal flex growth */
+        .drawing-app-col-padding-wrapper {
+            padding: 1rem; /* Bootstrap p-3 equivalent */
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1; /* Allow this wrapper to grow and push footers down */
+        }
+
+        /* ----- Styles for the Left Sidebar Content ----- */
+        .drawing-controls-section {
+            /* Styles for the "Toolbox" section wrapper, if any beyond margin */
+        }
+
+        .drawing-app-controls-sidebar { /* The <nav> element containing the tools in the Toolbox */
+            display: flex;
+            flex-direction: column; /* Stack control items vertically */
+            gap: 0.5rem; /* Spacing between control items */
+        }
+
+            /* Buttons within the Toolbox sidebar (excluding the moved resolution selector) */
+            .drawing-app-controls-sidebar .btn {
+                width: 100%;
+                text-align: left; /* Align text to the left for sidebar buttons */
+            }
+
+        /* Tidy up shape table */
+        .shape-table {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05);
+            width: 100%; /* Take the full width of editor tools */
+            box-sizing: border-box; /* Include padding and border in width */
+        }
+
+        /* Style the menu buttons */
+        .menu-btns {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap; /* Allow buttons to wrap to the next line */
+            justify-content: flex-start; /* Align buttons to the start */
+        }
+
+            .menu-btns li {
+                margin-right: 5px; /* Reduce spacing between buttons */
+                margin-bottom: 5px; /* Add spacing below buttons */
+            }
+
+        /* Style the shape buttons */
+        .shape-button {
+            padding: 6px 12px; /* Reduce button padding */
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 3px; /* Reduce border radius */
+            cursor: pointer;
+            font-size: 0.8em; /* Reduce font size */
+        }
+
+            .shape-button:hover {
+                background-color: #0056b3;
+            }
+
+
+        /* Style the shape buttons */
+        .drawing-button {
+            padding: 6px 12px; /* Reduce button padding */
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 3px; /* Reduce border radius */
+            cursor: pointer;
+            font-size: 0.8em; /* Reduce font size */
+        }
+
+            .drawing-button:hover {
+                background-color: #0056b3;
+            }
+
+        /* ----- Styles for the central content area (canvas) ----- */
+        .drawing-app-center-content {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            height: 100%;
+            padding: 0; /* Parent col-md-7 has p-0 in HTML */
+            overflow: hidden;
+        }
+
+        .drawing-app-canvas-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #e9ecef; /* Bootstrap's light gray ($gray-200) */
+            padding: 1rem; /* This padding also provides space for absolutely positioned elements like the resolution selector */
+            overflow: auto; /* Handles scrolling if SVG is larger than container */
+            min-height: 200px;
+            position: relative; /* CRUCIAL: Establishes positioning context for the resolution selector */
+        }
+
+        #drawing-canvas-app {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            /* Bootstrap's .border and .bg-white handle basic box styling in HTML */
+        }
+
+        /* ----- Styles for Resolution Selector (now generally defined and contextually positioned) ----- */
+        /* General appearance of the resolution selector's interactive parts */
+        .resolution-selector > summary#btn-resolution-summary-app {
+            list-style: none; /* Remove default disclosure triangle */
+            /* Basic button styling comes from Bootstrap's .btn classes applied in HTML */
+        }
+
+            .resolution-selector > summary#btn-resolution-summary-app::-webkit-details-marker {
+                display: none; /* Remove default disclosure triangle for Chrome/Safari */
+            }
+
+        .resolution-selector > .resolution-dropdown-content {
+            position: absolute; /* Relative to the summary button by default */
+            top: calc(100% + 2px); /* Position below the summary */
+            background-color: var(--bs-body-bg, white);
+            border: 1px solid var(--bs-border-color-translucent, #dee2e6);
+            border-radius: var(--bs-border-radius, .25rem);
+            z-index: 1050; /* High z-index for dropdown panel to be on top */
+            min-width: 160px; /* Adjust as needed */
+            padding: .5rem 0;
+            max-height: 200px; /* Example max height */
+            overflow-y: auto; /* Scroll if many resolutions */
+            /* display: none; is handled by the <details> tag not having 'open' attribute */
+        }
+
+        /* Specific positioning for the resolution selector when it's inside the canvas container */
+        .drawing-app-canvas-container > .resolution-selector {
+            position: absolute;
+            top: 1rem; /* Spacing from the top edge of .drawing-app-canvas-container */
+            right: 1rem; /* Spacing from the right edge of .drawing-app-canvas-container */
+            z-index: 20; /* Ensures the <details> element (button part) is above the SVG */
+            width: auto; /* Let it size to its content (the summary button) */
+        }
+
+            /* Adjust dropdown panel alignment when its parent .resolution-selector is in the canvas corner */
+            .drawing-app-canvas-container > .resolution-selector > .resolution-dropdown-content {
+                left: auto; /* Undoes any explicit left:0 from a more general rule or previous context */
+                right: 0; /* Aligns the dropdown panel to the right edge of its summary button */
+            }
+        /* ----- End Styles for Resolution Selector ----- */
+
+        /* Ensure footers in sidebars stick to the bottom */
+        .drawing-app-col-padding-wrapper .mt-auto {
+            margin-top: auto !important;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script type="module">
+        console.log("Drawing Application - Main Script Loaded");
+
+        // Adjust paths for page8
+        import { TaskManager } from '/js/interactiveelement/taskmanager.js';
+        import { DrawingActions } from '/js/interactiveelement/drawingactions.js';
+        import { GeometricPlane } from '/js/interactiveelement/geometricconstruction/geometricplane.js';
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const drawingCanvas = document.getElementById("drawing-canvas-app");
+            const foregroundLayer = document.getElementById("foreground-layer");
+
+            // Instantiate the root GeometricPlane
+            const mainDrawingPlane = new GeometricPlane({
+                rootSvg: drawingCanvas,
+                parentSvg: drawingCanvas
+            });
+            mainDrawingPlane.createVisual(drawingCanvas, drawingCanvas);
+
+            TaskManager.init({
+                rootSvg: drawingCanvas,
+                rootGeometricPlane: mainDrawingPlane,
+                firstResponder: mainDrawingPlane
+            });
+
+            DrawingActions.init({
+                selectorString: '.drawing-button',
+                rootGeometricPlane: mainDrawingPlane
+            });
+
+            // --- Resolution Handling (same as before) ---
+            const resolutionSummary = document.getElementById('btn-resolution-summary-app');
+
+            if (!resolutionSummary) {
+                console.warn("Resolution summary button 'btn-resolution-summary-app' not found. Resolution persistence and selection will not work.");
+                if (!drawingCanvas) {
+                    console.warn("Drawing canvas 'drawing-canvas-app' not found.");
+                }
+                return;
+            }
+            const resolutionDropdown = resolutionSummary.closest('.resolution-selector');
+
+            if (!drawingCanvas || !resolutionDropdown) {
+                console.warn("Drawing app interactive elements (canvas or dropdown structure) not found. Check IDs: 'drawing-canvas-app', or ensure 'btn-resolution-summary-app' is inside a '.resolution-selector'. Resolution persistence and selection will not work.");
+                return;
+            }
+            const resolutionLinks = resolutionDropdown.querySelectorAll('.resolution-dropdown-content a');
+
+            function applyResolution(widthStr, heightStr) {
+                const width = parseInt(widthStr, 10);
+                const height = parseInt(heightStr, 10);
+
+                if (isNaN(width) || isNaN(height)) {
+                    console.error("Invalid width or height provided to applyResolution:", widthStr, heightStr);
+                    return;
+                }
+
+                if (drawingCanvas) {
+                    drawingCanvas.setAttribute('width', width);
+                    drawingCanvas.setAttribute('height', height);
+
+                    const canvasText = drawingCanvas.querySelector('text');
+                    if (canvasText) {
+                        canvasText.textContent = `Drawing Canvas (${width}x${height})`;
+                    }
+                }
+
+                if (resolutionSummary) {
+                    resolutionSummary.textContent = `${width}x${height}`;
+                }
+            }
+
+            const storedWidth = localStorage.getItem('drawingAppLastResolutionWidth');
+            const storedHeight = localStorage.getItem('drawingAppLastResolutionHeight');
+
+            const initialSvgWidth = drawingCanvas.getAttribute('width');
+            const initialSvgHeight = drawingCanvas.getAttribute('height');
+            const fallbackDefaultWidth = "800";
+            const fallbackDefaultHeight = "600";
+
+            if (storedWidth && storedHeight && !isNaN(parseInt(storedWidth, 10)) && !isNaN(parseInt(storedHeight, 10))) {
+                applyResolution(storedWidth, storedHeight);
+            } else {
+                applyResolution(initialSvgWidth || fallbackDefaultWidth, initialSvgHeight || fallbackDefaultHeight);
+            }
+
+
+            resolutionLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const selectedWidth = link.getAttribute('data-width');
+                    const selectedHeight = link.getAttribute('data-height');
+
+                    if (selectedWidth && selectedHeight) {
+                        applyResolution(selectedWidth, selectedHeight);
+                        localStorage.setItem('drawingAppLastResolutionWidth', selectedWidth);
+                        localStorage.setItem('drawingAppLastResolutionHeight', selectedHeight);
+                    }
+
+                    if (resolutionDropdown) {
+                        resolutionDropdown.removeAttribute('open');
+                    }
+                });
+            });
+        });
+    </script>
+}

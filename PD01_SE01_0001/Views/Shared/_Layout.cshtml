@@ -1,0 +1,111 @@
+﻿@* 
+    Views/Shared/_Layout.cshtml
+    Version: 0.1.0
+    (c) 2024, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
+    https://creativecommons.org/licenses/by/4.0/
+
+
+    Additional Contributors
+    ------------------------
+      - OpenAI's ChatGPT in Copilot mode.
+*@
+@{
+    // Determine container class based on ViewData (set by individual views)
+    string containerClass = ViewData["UseFluidContainer"] as bool? == true ? "container-fluid" : "container";
+    string mainFlexGrowClass = ViewData["UseMainFlexGrow"] as bool? == true ? "d-flex flex-column flex-grow-1" : "";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - PD01_SE01_0001</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/PD01_SE01_0001.styles.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="d-flex flex-column vh-100 @ViewData["BodyClass"]">
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="InteractiveElement" asp-action="app">Planner Drawing</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="InteractiveElement" asp-action="app">SVG Editor</a>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" asp-area="" asp-controller="DependencyLayout" asp-action="Layout1">Layout 1</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="DependencyLayout" asp-action="Layout2">Layout 2</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="DependencyLayout" asp-action="Layout3">Layout 3</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="DependencyLayout" asp-action="Index">Dependency Layout</a>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" asp-area="" asp-controller="ClassDiagrams" asp-action="Diagram1">Diagram 1</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="ClassDiagrams" asp-action="Diagram2">Diagram 2</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="ClassDiagrams" asp-action="Diagram3">Diagram 3</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="ClassDiagrams" asp-action="Index">Class Diagram</a>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" asp-area="" asp-controller="StateCharts" asp-action="Chart1">Chart 1</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="StateCharts" asp-action="Chart2">Chart 2</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="StateCharts" asp-action="Chart3">Chart 4</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="StateCharts" asp-action="Index">State Chart</a>
+                        </li>
+                    </ul>
+                    <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    @* Conditionally use container or container-fluid *@
+    <div class="@containerClass @mainFlexGrowClass">
+        <main role="main" class="pb-3 @mainFlexGrowClass">
+            @RenderBody()
+        </main>
+    </div>
+
+    @if (!(ViewData["HideFooter"] as bool? == true))
+    {
+        <footer b-qonvel6w8x="" class="border-top footer text-muted">
+            <div b-qonvel6w8x="" class="container">
+                <img b-qonvel6w8x="" decoding="async" src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by.png" width="118" height="41" align="right">
+                <em b-qonvel6w8x="">© 2025 - AT Bespoke. This work is openly licensed via <a b-qonvel6w8x="" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</em> <a href="/Home/Privacy">Privacy</a>
+            </div>
+        </footer>
+    }
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
