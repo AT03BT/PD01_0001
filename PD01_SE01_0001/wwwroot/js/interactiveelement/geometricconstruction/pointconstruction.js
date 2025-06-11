@@ -6,7 +6,7 @@
 */
 
 import { GeometricConstruction } from './geometricconstruction.js';
-import { ConstructionState } from '../core/constructionstate.js'; // MODIFIED PATH
+import { ConstructionState } from '../core/constructionstate.js';
 import { PointImplement } from '../implements/pointimplement.js';
 
 // --- PointConstruction States ---
@@ -17,7 +17,7 @@ class WaitingForMouseEnterState extends ConstructionState {
         this.geometricConstruction = geometricConstruction;
         console.log('PointState: Entered WaitingForMouseEnterState (Neutral).');
         // REMOVED: this.geometricConstruction.updateVisual(); from constructor
-        // Will be called by GeometricPlane's acceptMouseMove/Click logic.
+        // It will be called by GeometricPlane's event handling logic when the state becomes active.
     }
 
     acceptMouseDown(rootSvg, parentSvg, event) {
@@ -28,6 +28,8 @@ class WaitingForMouseEnterState extends ConstructionState {
             this.geometricConstruction.select();
             this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseUpOnDragState;
             console.log('PointState (Neutral): Mouse down - Hit, transitioning to WaitingForMouseUpOnDragState (for drag)');
+        } else {
+            // console.log('PointState (Neutral): Mouse down - Not a hit. This event will be delegated further by GeometricPlane if not handled.');
         }
     }
 
@@ -56,6 +58,8 @@ class WaitingForMouseEnterState extends ConstructionState {
             this.geometricConstruction.select();
             this.geometricConstruction.currentState = this.geometricConstruction.selectedState;
             console.log('PointState (Neutral): Mouse click - Hit, transitioning to SelectedState.');
+        } else {
+            // console.log('PointState (Neutral): Mouse click - Not a hit. No action.');
         }
     }
 }
@@ -67,7 +71,7 @@ class HoverState extends ConstructionState {
         this.geometricConstruction = geometricConstruction;
         console.log('PointState: Entered HoverState.');
         // REMOVED: this.geometricConstruction.updateVisual(); from constructor
-        // Will be called by GeometricPlane's acceptMouseMove logic.
+        // It will be called by GeometricPlane's event handling logic when the state becomes active.
     }
 
     acceptMouseDown(rootSvg, parentSvg, event) {
@@ -95,8 +99,7 @@ class HoverState extends ConstructionState {
             this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState;
             console.log('PointState (Hover): Mouse off - No hit, transitioning to NeutralState');
         } else {
-            // Still hovering, ensure visual is correct (updateVisual will handle it)
-            this.geometricConstruction.updateVisual();
+            this.geometricConstruction.updateVisual(); // Still hovering, ensure visual is correct
         }
     }
 
@@ -127,7 +130,7 @@ class SelectedState extends ConstructionState {
         this.geometricConstruction = geometricConstruction;
         console.log('PointState: Entered SelectedState.');
         // REMOVED: this.geometricConstruction.updateVisual(); from constructor
-        // Will be called by GeometricPlane's acceptMouseDown/Click logic.
+        // It will be called by GeometricPlane's event handling logic when the state becomes active.
     }
 
     acceptMouseDown(rootSvg, parentSvg, event) {
@@ -138,7 +141,7 @@ class SelectedState extends ConstructionState {
             this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseUpOnDragState;
             console.log('PointState (Selected): Mouse down - Hit, transitioning to WaitingForMouseUpOnDragState (for drag)');
         } else {
-            // Clicked outside the selected point. GeometricPlane will deselect it (no action for point itself)
+            // Clicked outside the selected point. GeometricPlane will handle deselect.
         }
     }
 
@@ -223,6 +226,9 @@ class WaitingForMouseDownOnAdditionState extends ConstructionState {
         if (this.hasMouseDown) { // Only yield if a mousedown actually happened in this state
             console.log('PointState (OnAddition WaitingForMouseDown): Mouse up - PointConstruction task finished, yielding control.');
 
+            // The TaskManager will call rootGeometricPlane.addChild with the _implement.
+            // No direct addSelfToPlane call needed here.
+
             this.geometricConstruction.yieldControl(); // Yield control to TaskManager
             this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState; // Transition to Neutral after yielding
             event.isHandled = true; // Mark event as handled to stop click propagation
@@ -276,8 +282,7 @@ export class PointConstruction extends GeometricConstruction {
 
     _implement = null; // Holds the PointImplement instance
 
-    // isAddedToPlane is no longer a flag on the Construction itself
-    // REMOVED: isAddedToPlane = false;
+    isAddedToPlane = false; // Flag to track if this instance's implement has been added to the GeometricPlane
 
     constructor(config = {}) {
         super(config);
@@ -289,8 +294,8 @@ export class PointConstruction extends GeometricConstruction {
             localGroup: this.localGroup
         });
 
-        // NEW: Explicitly assign _ownerConstruction to the implement here, after PointImplement is instantiated.
-        // This 'this' is the fully formed PointConstruction instance.
+        // Explicitly assign _ownerConstruction to the implement here, after PointImplement is instantiated.
+        // `this` is the fully formed PointConstruction instance.
         this._implement._ownerConstruction = this;
 
         this.enqueuedForDrawingState = new EnqueuedForDrawingState(this);
@@ -302,7 +307,7 @@ export class PointConstruction extends GeometricConstruction {
 
         this.currentState = this.waitingForMouseEnterState; // Default to neutral after creation
 
-        // REMOVED: this.isAddedToPlane = false;
+        this.isAddedToPlane = false;
     }
 
     startDrawing() {
@@ -310,13 +315,12 @@ export class PointConstruction extends GeometricConstruction {
         if (this._implement.visualElement && this._implement.visualElement.parentNode) {
             this._implement.removeVisual();
         }
-        // REMOVED: this.isAddedToPlane = false;
+        this.isAddedToPlane = false; // Reset for new drawing cycle
         console.log('PointConstruction: Started drawing, entered EnqueuedForDrawingState.');
     }
 
     // `createVisual` method now delegates to _implement
     createVisual(rootSvg, parentSvg) {
-        // Pass context to the implement for visual creation
         this._implement.createVisual(rootSvg, parentSvg);
     }
 
@@ -331,15 +335,17 @@ export class PointConstruction extends GeometricConstruction {
         }
     }
 
+    // `updatePosition` method now delegates to _implement (via getter/setter from GeometricConstruction)
+    // No change needed here, as x, y setters/getters in base class handle it.
+    // The notifyObservers is already in base class's updatePosition.
+
     // `hitTest` method now delegates to _implement
     hitTest(mouseX, mouseY, hitRadius = 8) {
         if (this._implement && typeof this._implement.hitTest === 'function') {
             if (this._implement.hitTest(mouseX, mouseY, hitRadius)) {
-                // console.log(`PointConstruction: hitTest for Point at (${this.x},${this.y}) with mouse (${mouseX},${mouseY}). Hit: true`);
                 return this; // Return this GeometricConstruction instance on hit
             }
         }
-        // console.log(`PointConstruction: hitTest for Point at (${this.x},${this.y}) with mouse (${mouseX},${mouseY}). Hit: false`);
         return null; // Return null on no hit
     }
 
@@ -352,8 +358,8 @@ export class PointConstruction extends GeometricConstruction {
     acceptKeyPress(rootSvg, parentSvg, event) { if (this.currentState && typeof this.currentState.acceptKeyPress === 'function') { this.currentState.acceptKeyPress(rootSvg, parentSvg, event); } }
 
     stop(rootSvg) {
-        if (this._implement.visualElement && this._implement.visualElement.parentNode) { // Corrected access to _implement.visualElement
-            this._implement.removeVisual(); // Use implement's removal method
+        if (this._implement.visualElement && this._implement.visualElement.parentNode) {
+            this._implement.removeVisual();
         }
         super.stop();
     }
