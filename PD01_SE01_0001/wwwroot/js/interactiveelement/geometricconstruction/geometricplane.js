@@ -10,7 +10,6 @@
 
 import { GeometricConstruction } from './geometricconstruction.js';
 import { ConstructionState } from '../core/constructionstate.js'; // MODIFIED PATH
-import { PointImplement } from '../implements/pointimplement.js';
 
 // ... (GeometricPlaneIdleState and other parts of GeometricPlane) ...
 
@@ -175,16 +174,15 @@ export class GeometricPlane extends GeometricConstruction {
     /**
      * Adds a DrawingImplement to this GeometricPlane.
      * @param {string} id - Unique ID for the child.
-     * @param {DrawingImplement} childImplement - The DrawingImplement instance to add.
+     * @param {object} childImplement - The DrawingImplement instance to add.
      */
     addChild(id, childImplement) {
         console.log(`GeometricPlane: Attempting to add child '${id}' (${childImplement ? childImplement.constructor.name : 'undefined'}).`);
 
-        // Validation: Check if it's a valid DrawingImplement and has the ownerConstruction link
-        // The _ownerConstruction should now be set *before* addChild is called, by the GC itself.
-        if (!(childImplement instanceof DrawingImplement) || !childImplement._ownerConstruction) {
+        // Validation now checks against window.DrawingImplement (global) for testing
+        if (!(childImplement instanceof window.DrawingImplement) || !childImplement._ownerConstruction) { // MODIFIED CHECK
             console.error(`GeometricPlane: Attempted to add invalid DrawingImplement (missing _ownerConstruction). ID: ${id}, Implement:`, childImplement);
-            return; // Block invalid implement additions
+            return;
         }
 
         // Additional validation for context properties (rootSvg, localGroup) that are essential for visual management
