@@ -1,6 +1,6 @@
 ﻿/*
     wwwroot/js/interactiveelement/page8/geometricconstruction/geometricplane.js
-    Version: 0.2.4 // Version increment for refined acceptMouseMove hover logic
+    Version: 0.2.4 // Version increment for correct acceptMouseMove hover logic
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 
@@ -64,19 +64,18 @@ class GeometricPlaneIdleState extends ConstructionState {
         const mouseY = event.clientY - rootSvg.getBoundingClientRect().top;
         const interactionHitRadius = 8;
 
-        // Pass mouse move events to currently selected object for its manipulation
+        // If something is currently selected, delegate all mousemoves to it for manipulation.
+        // The selected object should handle its own state changes (e.g., drag).
         if (this.geometricPlane.currentlySelectedObject && typeof this.geometricPlane.currentlySelectedObject.acceptMouseMove === 'function') {
-            console.log(`GeometricPlane (Idle): Delegating mousemove to currently selected ${this.geometricPlane.currentlySelectedObject.constructor.name}.`);
             this.geometricPlane.currentlySelectedObject.acceptMouseMove(rootSvg, this.geometricPlane.currentlySelectedObject.localGroup, event);
             event.isHandled = true;
         } else {
             // No object is selected, so manage hover effects for non-selected children.
-            // Iterate all children (DrawingImplement) to ensure proper hover/unhover visual states
-            for (const childImplement of this.geometricPlane.children.values()) { // Loop through DrawingImplement instances
-                // Get the GeometricConstruction (controller) from the implement
-                const childConstruction = childImplement._ownerConstruction;
+            // Iterate all children (DrawingImplement) and get their ownerConstruction to manage hover.
+            for (const childImplement of this.geometricPlane.children.values()) {
+                const childConstruction = childImplement._ownerConstruction; // Get the controller
 
-                if (childConstruction && !childConstruction.selected) { // Only manage hover for non-selected controllers
+                if (childConstruction && !childConstruction.selected) { // Only manage hover for valid, non-selected controllers
                     const isCurrentlyHovered = childConstruction.hitTest(mouseX, mouseY, this.interactionHitRadius); // Hit test on the controller
 
                     if (isCurrentlyHovered && childConstruction.currentState !== childConstruction.hoverState) {
