@@ -1,6 +1,6 @@
 ﻿/*
     wwwroot/js/interactiveelement/page8/geometricconstruction/geometricplane.js
-    Version: 0.2.4 // Version increment for correct acceptMouseMove hover logic
+    Version: 0.2.5 // Version increment for explicit updateVisual on hover transition
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 
@@ -8,11 +8,12 @@
     ===============
 */
 
-import { GeometricConstruction } from './geometricconstruction.js';
-import { ConstructionState } from '../core/constructionstate.js'; // MODIFIED PATH
-import { DrawingImplement } from '../core/drawingimplement.js';
+import { GeometricConstruction, ConstructionState } from '../geometricconstruction.js';
+import { PointConstruction } from './pointconstruction.js';
+import { DrawingImplement } from '../../core/drawingimplement.js';
 
-// States for GeometricPlane
+// ... (GeometricPlaneIdleState and other parts of GeometricPlane) ...
+
 class GeometricPlaneIdleState extends ConstructionState {
     interactionHitRadius = 8;
 
@@ -65,25 +66,25 @@ class GeometricPlaneIdleState extends ConstructionState {
         const interactionHitRadius = 8;
 
         // If something is currently selected, delegate all mousemoves to it for manipulation.
-        // The selected object should handle its own state changes (e.g., drag).
         if (this.geometricPlane.currentlySelectedObject && typeof this.geometricPlane.currentlySelectedObject.acceptMouseMove === 'function') {
             this.geometricPlane.currentlySelectedObject.acceptMouseMove(rootSvg, this.geometricPlane.currentlySelectedObject.localGroup, event);
             event.isHandled = true;
         } else {
             // No object is selected, so manage hover effects for non-selected children.
-            // Iterate all children (DrawingImplement) and get their ownerConstruction to manage hover.
-            for (const childImplement of this.geometricPlane.children.values()) {
-                const childConstruction = childImplement._ownerConstruction; // Get the controller
+            const hitImplement = this.geometricPlane.hitTest(mouseX, mouseY, this.interactionHitRadius);
 
-                if (childConstruction && !childConstruction.selected) { // Only manage hover for valid, non-selected controllers
-                    const isCurrentlyHovered = childConstruction.hitTest(mouseX, mouseY, this.interactionHitRadius); // Hit test on the controller
+            for (const childImplement of this.geometricPlane.children.values()) {
+                const childConstruction = childImplement._ownerConstruction;
+
+                if (childConstruction && !childConstruction.selected) {
+                    const isCurrentlyHovered = childConstruction.hitTest(mouseX, mouseY, this.interactionHitRadius);
 
                     if (isCurrentlyHovered && childConstruction.currentState !== childConstruction.hoverState) {
-                        childConstruction.currentState = childConstruction.hoverState; // Transition to hover
-                        // Visual update is handled by HoverState's constructor on entry
+                        childConstruction.currentState = childConstruction.hoverState;
+                        childConstruction.updateVisual(); // NEW: Call updateVisual after state transition
                     } else if (!isCurrentlyHovered && childConstruction.currentState === childConstruction.hoverState) {
-                        childConstruction.currentState = childConstruction.waitingForMouseEnterState; // Transition back to Neutral
-                        // Visual update is handled by WaitingForMouseEnterState's constructor on entry
+                        childConstruction.currentState = childConstruction.waitingForMouseEnterState;
+                        childConstruction.updateVisual(); // NEW: Call updateVisual after state transition
                     }
                 }
             }
@@ -202,12 +203,10 @@ export class GeometricPlane extends GeometricConstruction {
         this.children.set(id, childImplement);
         console.log(`GeometricPlane: Child implement '${id}' (${childImplement.constructor.name}) added to internal map.`);
 
-        // Ensure the implement's visual is created and placed
         if (!childImplement.visualElement) {
             console.log(`GeometricPlane: Calling createVisual on child implement '${id}'.`);
             childImplement.createVisual(childImplement.rootSvg, childImplement.localGroup);
         } else {
-            // If visual already exists, ensure it's in the correct parent and visible
             if (childImplement.visualElement.parentNode !== childImplement.localGroup) {
                 console.warn(`GeometricPlane: Child implement visual for '${id}' is in wrong parent. Moving.`);
                 childImplement.localGroup.appendChild(childImplement.visualElement);
@@ -230,10 +229,10 @@ export class GeometricPlane extends GeometricConstruction {
             if (childImplement._ownerConstruction) {
                 childImplement._ownerConstruction.deselect(); // Ensure controller is deselected
             }
-            childImplement.removeVisual(); // Ask the implement to remove its visual
+            childImplement.removeVisual();
             this.children.delete(id);
             console.log(`GeometricPlane: Child implement '${id}' removed.`);
-            if (this.currentlySelectedObject === childImplement._ownerConstruction) { // Check owner construction
+            if (this.currentlySelectedObject === childImplement._ownerConstruction) {
                 this.currentlySelectedObject = null;
             }
         }
