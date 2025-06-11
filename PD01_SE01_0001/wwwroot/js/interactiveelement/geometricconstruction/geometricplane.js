@@ -8,9 +8,9 @@
     ===============
 */
 
-import { GeometricConstruction, ConstructionState } from '../geometricconstruction.js';
-import { PointConstruction } from './pointconstruction.js';
-import { DrawingImplement } from '../../core/drawingimplement.js';
+import { GeometricConstruction } from './geometricconstruction.js';
+import { ConstructionState } from '../core/constructionstate.js'; // MODIFIED PATH
+import { PointImplement } from '../implements/pointimplement.js';
 
 // ... (GeometricPlaneIdleState and other parts of GeometricPlane) ...
 
