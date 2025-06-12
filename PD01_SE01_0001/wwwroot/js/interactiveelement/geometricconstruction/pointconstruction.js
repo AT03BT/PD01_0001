@@ -1,6 +1,6 @@
 ﻿/*
     wwwroot/js/interactiveelement/geometricconstruction/pointconstruction.js
-    Version: 1.2.10 // Version increment for explicit updateVisual after state changes
+    Version: 1.2.11 // Version increment for explicit updateVisual after state changes
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 */
