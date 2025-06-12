@@ -5,7 +5,8 @@
     https://creativecommons.org/licenses/by/4.0/
 */
 
-import { GeometricConstruction, ConstructionState } from './geometricconstruction.js';
+import { GeometricConstruction } from './geometricconstruction.js';
+import { ConstructionState } from '../core/constructionstate.js';
 import { PointImplement } from '../implements/pointimplement.js';
 
 // --- PointConstruction States ---
