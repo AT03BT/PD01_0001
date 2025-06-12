@@ -190,14 +190,3 @@ export class GeometricConstruction {
         }
     }
 }
-
-export class ConstructionState {
-    geometricConstruction = null;
-    acceptMouseDown(rootSvg, parentSvg, event) { }
-    acceptMouseUp(rootSvg, parentSvg, event) { }
-    acceptMouseMove(rootSvg, parentSvg, event) { }
-    acceptMouseClick(rootSvg, parentSvg, event) { }
-    acceptKeyDown(rootSvg, parentSvg, event) { }
-    acceptKeyUp(rootSvg, parentSvg, event) { }
-    acceptKeyPress(rootSvg, parentSvg, event) { }
-}
