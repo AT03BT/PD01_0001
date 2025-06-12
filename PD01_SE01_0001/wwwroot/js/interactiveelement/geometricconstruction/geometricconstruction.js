@@ -6,13 +6,10 @@
 
     Geometric Construction
     ======================
-    Base class for interactive geometric entities (controllers/state machines).
-    It now contains a DrawingImplement for its data and visual representation.
 */
 
 import { ConstructionState } from '../core/constructionstate.js';
 import { DrawingImplement } from '../core/drawingimplement.js';
-
 
 export class GeometricConstruction {
 
@@ -54,7 +51,7 @@ export class GeometricConstruction {
             if (this._implement) {
                 this._implement.data.stroke = 'blue';
                 this._implement.data.strokeWidth = 2;
-                this._implement.data.selected = true; // NEW: Sync implement's data.selected
+                this._implement.data.selected = true; // Sync implement's data.selected
                 this._implement.updateVisual();
             }
             if (typeof this.showHandles === 'function') {
@@ -70,11 +67,23 @@ export class GeometricConstruction {
             if (this._implement) {
                 this._implement.data.stroke = 'black';
                 this._implement.data.strokeWidth = 1;
-                this._implement.data.selected = false; // NEW: Sync implement's data.selected
-                this._implement.updateVisual();
+                this._implement.data.selected = false; // Sync implement's data.selected
+                this._implement.updateVisual(); // Will now revert to default
             }
             if (typeof this.hideHandles === 'function') {
                 this.hideHandles();
+            }
+            // NEW: Ensure current state also reverts to neutral (if not already there)
+            // This is important if an object was selected, and then deselected by clicking empty space.
+            // It needs to be in a state that allows hover again.
+            if (this.currentState && this.currentState !== this.waitingForMouseEnterState) { // Check if not already neutral
+                // This requires knowledge of specific states. Let's make this more generic.
+                // A deselect action usually puts the object back into its 'base' or 'idle' interactive state.
+                // For now, we'll assume waitingForMouseEnterState is the default idle.
+                if (this.waitingForMouseEnterState) { // Check if this state exists (for PointConstruction)
+                    this.currentState = this.waitingForMouseEnterState;
+                    this.updateVisual(); // Ensure visual updates after state change
+                }
             }
         }
     }
@@ -180,4 +189,15 @@ export class GeometricConstruction {
             console.error("GeometricConstruction: Cannot yield control, taskManager or yieldCurrentTask is not set.");
         }
     }
+}
+
+export class ConstructionState {
+    geometricConstruction = null;
+    acceptMouseDown(rootSvg, parentSvg, event) { }
+    acceptMouseUp(rootSvg, parentSvg, event) { }
+    acceptMouseMove(rootSvg, parentSvg, event) { }
+    acceptMouseClick(rootSvg, parentSvg, event) { }
+    acceptKeyDown(rootSvg, parentSvg, event) { }
+    acceptKeyUp(rootSvg, parentSvg, event) { }
+    acceptKeyPress(rootSvg, parentSvg, event) { }
 }
