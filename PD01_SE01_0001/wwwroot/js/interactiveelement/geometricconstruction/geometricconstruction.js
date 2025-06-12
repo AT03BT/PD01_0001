@@ -1,6 +1,6 @@
 ﻿/*
-    wwwroot/js/interactiveelement/geometricconstruction/geometricconstruction.js
-    Version: 0.3.4 // Version increment for explicit _implement.data sync
+    wwwroot/js/interactiveelement/page8/geometricconstruction/geometricconstruction.js
+    Version: 0.3.5 // Version increment for ensuring deselection transitions to neutral state
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 
@@ -38,7 +38,7 @@ export class GeometricConstruction {
 
     stop() {
         this.currentState = null;
-        this.deselect();
+        this.deselect(); // Calls deselect to clean up visual state
         if (this._implement) {
             this._implement.removeVisual();
         }
@@ -49,10 +49,8 @@ export class GeometricConstruction {
             this.selected = true;
             console.log(`${this.constructor.name} selected.`);
             if (this._implement) {
-                this._implement.data.stroke = 'blue';
-                this._implement.data.strokeWidth = 2;
                 this._implement.data.selected = true; // Sync implement's data.selected
-                this._implement.updateVisual();
+                // No immediate updateVisual here; the state transition to SelectedState will call it.
             }
             if (typeof this.showHandles === 'function') {
                 this.showHandles();
@@ -65,25 +63,21 @@ export class GeometricConstruction {
             this.selected = false;
             console.log(`${this.constructor.name} deselected.`);
             if (this._implement) {
-                this._implement.data.stroke = 'black';
-                this._implement.data.strokeWidth = 1;
                 this._implement.data.selected = false; // Sync implement's data.selected
-                this._implement.updateVisual(); // Will now revert to default
+                // No immediate updateVisual here; the state transition to NeutralState will call it.
             }
             if (typeof this.hideHandles === 'function') {
                 this.hideHandles();
             }
-            // NEW: Ensure current state also reverts to neutral (if not already there)
-            // This is important if an object was selected, and then deselected by clicking empty space.
-            // It needs to be in a state that allows hover again.
-            if (this.currentState && this.currentState !== this.waitingForMouseEnterState) { // Check if not already neutral
-                // This requires knowledge of specific states. Let's make this more generic.
-                // A deselect action usually puts the object back into its 'base' or 'idle' interactive state.
-                // For now, we'll assume waitingForMouseEnterState is the default idle.
-                if (this.waitingForMouseEnterState) { // Check if this state exists (for PointConstruction)
-                    this.currentState = this.waitingForMouseEnterState;
-                    this.updateVisual(); // Ensure visual updates after state change
-                }
+            // NEW: Explicitly transition to NeutralState upon deselection
+            // This ensures the visual updates correctly based on the neutral state.
+            // This relies on the PointConstruction having a 'waitingForMouseEnterState' property.
+            if (this.waitingForMouseEnterState) {
+                this.currentState = this.waitingForMouseEnterState;
+                this.updateVisual(); // Force visual update to neutral colors
+            } else {
+                // Fallback: if no specific neutral state is defined, just update visual
+                this.updateVisual();
             }
         }
     }
@@ -189,4 +183,15 @@ export class GeometricConstruction {
             console.error("GeometricConstruction: Cannot yield control, taskManager or yieldCurrentTask is not set.");
         }
     }
+}
+
+export class ConstructionState {
+    geometricConstruction = null;
+    acceptMouseDown(rootSvg, parentSvg, event) { }
+    acceptMouseUp(rootSvg, parentSvg, event) { }
+    acceptMouseMove(rootSvg, parentSvg, event) { }
+    acceptMouseClick(rootSvg, parentSvg, event) { }
+    acceptKeyDown(rootSvg, parentSvg, event) { }
+    acceptKeyUp(rootSvg, parentSvg, event) { }
+    acceptKeyPress(rootSvg, parentSvg, event) { }
 }

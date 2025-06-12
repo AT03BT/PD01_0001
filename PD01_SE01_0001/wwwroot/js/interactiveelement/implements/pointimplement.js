@@ -1,6 +1,6 @@
 ﻿/*
-    wwwroot/js/interactiveelement/implements/pointimplement.js
-    Version: 0.1.5 // Version increment for debugging fill color
+    wwwroot/js/interactiveelement/page8/implements/pointimplement.js
+    Version: 0.1.6 // Version increment for handling null ID and initial visual state
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 
@@ -49,7 +49,7 @@ export class PointImplement extends DrawingImplement {
         for (const key in attributes) {
             this.visualElement.setAttribute(key, attributes[key]);
         }
-        this.updateVisual();
+        this.updateVisual(); // Update attributes and make visible.
         this.visualElement.setAttribute('visibility', 'visible');
     }
 
@@ -58,22 +58,22 @@ export class PointImplement extends DrawingImplement {
             this.visualElement.setAttribute('cx', this.data.x.toString());
             this.visualElement.setAttribute('cy', this.data.y.toString());
 
-            // --- NEW/REFINED VISUAL LOGIC ---
             let newFill = this.data.fill;
             let newStroke = this.data.stroke;
             let newStrokeWidth = this.data.strokeWidth;
 
+            // Apply visual rules based on state
             if (this.data.selected) {
                 newStroke = 'blue';
                 newStrokeWidth = 2;
-                newFill = 'black'; // Selected object has black fill
+                newFill = 'black';
             } else {
                 newStroke = 'black';
                 newStrokeWidth = 1;
-                if (this.data.currentState === this.data.hoverState) {
-                    newFill = 'grey'; // Hover fill
+                if (this.data.currentState && this.data.currentState.constructor.name === 'HoverState') { // Check constructor name directly
+                    newFill = 'grey';
                 } else {
-                    newFill = 'black'; // Default fill
+                    newFill = 'black';
                 }
             }
 
@@ -81,7 +81,7 @@ export class PointImplement extends DrawingImplement {
             this.visualElement.style.stroke = newStroke;
             this.visualElement.style.strokeWidth = newStrokeWidth.toString();
 
-            console.log(`PointImplement: Updated visual for ID ${this.id}. Selected: ${this.data.selected}, CurrentState: ${this.data.currentState ? this.data.currentState.constructor.name : 'None'}, Applied Fill: ${newFill}, Stroke: ${newStroke}`); // NEW LOG
+            console.log(`PointImplement: Updated visual for ID ${this.id || 'null'}. Selected: ${this.data.selected}, CurrentState: ${this.data.currentState ? this.data.currentState.constructor.name : 'None'}, Applied Fill: ${newFill}, Stroke: ${newStroke}`); // Changed ID logging
         }
     }
 
