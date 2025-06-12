@@ -6,7 +6,7 @@
 */
 
 import { GeometricConstruction, ConstructionState } from './geometricconstruction.js';
-import { PointImplement } from '../../implements/pointimplement.js';
+import { PointImplement } from '../implements/pointimplement.js';
 
 // --- PointConstruction States ---
 
