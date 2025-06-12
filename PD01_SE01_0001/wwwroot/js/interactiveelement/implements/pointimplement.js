@@ -1,42 +1,39 @@
 ﻿/*
     wwwroot/js/interactiveelement/page8/implements/pointimplement.js
-    Version: 0.1.4 // Version increment for removing ownerConstruction from constructor
+    Version: 0.1.5 // Version increment for implementing visual logic in updateVisual
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 
     Point Implement
     ===============
-    Represents the data and visual for a drawn point.
 */
 
 import { DrawingImplement } from '../core/drawingimplement.js';
 
 export class PointImplement extends DrawingImplement {
-    constructor(id, config = {}) { // Modified: No ownerConstruction parameter
+    constructor(id, config = {}) {
         super(id, { ...config, type: 'point' });
-        // _ownerConstruction will be explicitly assigned by the owning GeometricConstruction.
+        // No ownerConstruction parameter in constructor, it's set externally.
 
         this.data.x = config.x || 0;
         this.data.y = config.y || 0;
-        this.data.r = config.r || 3; // Default radius
-        this.data.fill = config.fill || 'black';
-        this.data.stroke = config.stroke || 'black';
-        this.data.strokeWidth = config.strokeWidth || 1;
+        this.data.r = config.r || 3;
+        this.data.fill = config.fill || 'black'; // Default initial fill
+        this.data.stroke = config.stroke || 'black'; // Default initial stroke
+        this.data.strokeWidth = config.strokeWidth || 1; // Default initial stroke width
         this.data.class = config.class || 'block-point'; // CSS class
+
+        // These properties will be passed via this.data from PointConstruction.updateVisual()
+        this.data.selected = false; // Will be boolean from GeometricConstruction.selected
+        this.data.currentState = null; // Will be reference to current state object
+        this.data.hoverState = null; // Will be reference to hoverState object
     }
 
-    /**
-     * Creates and appends the SVG visual element to the localGroup.
-     * Overrides DrawingImplement.createVisual.
-     * @param {SVGSVGElement} rootSvg - The main SVG canvas.
-     * @param {SVGGElement} localGroup - The SVG <g> element where this visual should be appended.
-     * @param {object} [attributes] - Optional attributes to set on the visual element initially.
-     */
     createVisual(rootSvg, localGroup, attributes = {}) {
-        this.rootSvg = rootSvg; // Ensure these are set for hitTest and parenting
+        this.rootSvg = rootSvg;
         this.localGroup = localGroup;
 
-        if (!this.visualElement) { // Only create if it doesn't exist
+        if (!this.visualElement) {
             this.visualElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             this.visualElement.setAttribute('class', this.data.class);
             this.visualElement.setAttribute('r', this.data.r.toString());
@@ -44,44 +41,43 @@ export class PointImplement extends DrawingImplement {
 
             if (this.localGroup) {
                 this.localGroup.appendChild(this.visualElement);
-            } else if (this.rootSvg) { // Fallback
+            } else if (this.rootSvg) {
                 this.rootSvg.appendChild(this.visualElement);
                 console.warn(`PointImplement: No localGroup for ${this.id}. Appending to rootSvg.`);
             } else {
                 console.error(`PointImplement: Cannot append visual for ${this.id}. Neither localGroup nor rootSvg available.`);
             }
         }
-        // Apply initial attributes passed in
         for (const key in attributes) {
             this.visualElement.setAttribute(key, attributes[key]);
         }
-
         this.updateVisual(); // Update attributes and make visible.
         this.visualElement.setAttribute('visibility', 'visible');
     }
 
-    /**
-     * Updates the SVG visual element's attributes based on internal data.
-     * Overrides DrawingImplement.updateVisual.
-     */
     updateVisual() {
         if (this.visualElement) {
             this.visualElement.setAttribute('cx', this.data.x.toString());
             this.visualElement.setAttribute('cy', this.data.y.toString());
-            this.visualElement.style.fill = this.data.fill;
-            this.visualElement.style.stroke = this.data.stroke;
-            this.visualElement.style.strokeWidth = this.data.strokeWidth.toString();
+
+            // --- NEW/REFINED VISUAL LOGIC ---
+            if (this.data.selected) {
+                this.visualElement.style.stroke = 'blue';
+                this.visualElement.style.strokeWidth = '2';
+                this.visualElement.style.fill = 'black'; // Selected object has black fill by default
+            } else {
+                this.visualElement.style.stroke = 'black'; // Default stroke for non-selected
+                this.visualElement.style.strokeWidth = '1';
+                // Check if it's currently in HoverState (via the passed state reference)
+                if (this.data.currentState === this.data.hoverState) {
+                    this.visualElement.style.fill = 'grey'; // Hover fill
+                } else {
+                    this.visualElement.style.fill = 'black'; // Default fill when not selected and not hovered
+                }
+            }
         }
     }
 
-    /**
-     * Performs a hit test for the given mouse coordinates.
-     * Overrides DrawingImplement.hitTest.
-     * @param {number} mouseX - Mouse X coordinate relative to rootSvg.
-     * @param {number} mouseY - Mouse Y coordinate relative to rootSvg.
-     * @param {number} hitRadius - The radius for hit detection (e.g., 8 for user interaction).
-     * @returns {DrawingImplement|null} The PointImplement instance if hit, null otherwise.
-     */
     hitTest(mouseX, mouseY, hitRadius) {
         if (!this.visualElement) {
             return null;
@@ -91,8 +87,6 @@ export class PointImplement extends DrawingImplement {
         const distance = Math.sqrt(Math.pow(mouseX - currentCx, 2) + Math.pow(mouseY - currentCy, 2));
 
         const effectiveHitRadius = hitRadius !== undefined ? hitRadius : this.data.r;
-
-        // console.log(`PointImplement: hitTest for Point at (${currentCx},${currentCy}) with mouse (${mouseX},${mouseY}). Distance: ${distance}. Hit: ${distance <= effectiveHitRadius}`);
 
         if (distance <= effectiveHitRadius) {
             return this;
