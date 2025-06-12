@@ -1,5 +1,5 @@
 ﻿/*
-    wwwroot/js/interactiveelement/page8/geometricconstruction/pointconstruction.js
+    wwwroot/js/interactiveelement/geometricconstruction/pointconstruction.js
     Version: 1.2.8 // Version increment for removing isAddedToPlane and consolidating ID
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/

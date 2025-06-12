@@ -1,5 +1,5 @@
 ﻿/*
-    wwwroot/js/interactiveelement/page8/implements/pointimplement.js
+    wwwroot/js/interactiveelement/implements/pointimplement.js
     Version: 0.1.5 // Version increment for debugging fill color
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/

@@ -1,5 +1,5 @@
 ﻿/*
-    wwwroot/js/interactiveelement/page8/core/drawingimplement.js
+    wwwroot/js/interactiveelement/core/drawingimplement.js
     Version: 0.1.5 // Version increment for temporary global export for debugging
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/

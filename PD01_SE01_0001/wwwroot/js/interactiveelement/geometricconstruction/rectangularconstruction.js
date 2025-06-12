@@ -1,5 +1,5 @@
 ﻿/*
-    wwwroot/js/interactiveelement/page8/geometricconstruction/rectangularconstruction.js
+    wwwroot/js/interactiveelement/geometricconstruction/rectangularconstruction.js
     Version: 0.4.7 // Version increment for robust _ownerConstruction assignment
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/

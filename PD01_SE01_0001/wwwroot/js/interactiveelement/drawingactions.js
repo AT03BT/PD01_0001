@@ -1,5 +1,5 @@
 ﻿/*
-    wwwroot/js/interactiveelement/page8/drawingactions.js
+    wwwroot/js/interactiveelement/drawingactions.js
     Version: 0.0.7 // Version increment for removing addSelfToPlane callback
     (c) 2024, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/

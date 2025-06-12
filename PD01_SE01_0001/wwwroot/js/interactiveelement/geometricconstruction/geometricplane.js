@@ -1,5 +1,5 @@
 ﻿/*
-    wwwroot/js/interactiveelement/page8/geometricconstruction/geometricplane.js
+    wwwroot/js/interactiveelement/geometricconstruction/geometricplane.js
     Version: 0.2.5 // Version increment for streamlined hover logic
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/

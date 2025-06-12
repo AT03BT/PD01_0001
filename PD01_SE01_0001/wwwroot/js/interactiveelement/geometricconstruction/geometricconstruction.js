@@ -1,5 +1,5 @@
 ﻿/*
-    wwwroot/js/interactiveelement/page8/geometricconstruction/geometricconstruction.js
+    wwwroot/js/interactiveelement/geometricconstruction/geometricconstruction.js
     Version: 0.3.4 // Version increment for explicit _implement.data sync
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
