@@ -5,8 +5,9 @@
     https://creativecommons.org/licenses/by/4.0/
 */
 
-import { GeometricConstruction, ConstructionState } from './geometricconstruction.js';
-import { PointImplement } from '../implements/pointimplement.js';
+import { GeometricConstruction } from './geometricconstruction.js'; // This imports the base class from the same directory
+import { ConstructionState } from '../core/constructionstate.js';   // This imports the state base class from the 'core' folder
+import { PointImplement } from '../implements/pointimplement.js'; 
 
 // --- PointConstruction States ---
 
