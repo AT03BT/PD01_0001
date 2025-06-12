@@ -1,15 +1,17 @@
 ﻿/*
-    wwwroot/js/interactiveelement/page8/geometricconstruction/geometricconstruction.js
+    wwwroot/js/interactiveelement/geometricconstruction/geometricconstruction.js
     Version: 0.3.5 // Version increment for ensuring deselection transitions to neutral state
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 
     Geometric Construction
     ======================
+    Base class for interactive geometric entities (controllers/state machines).
+    It now contains a DrawingImplement for its data and visual representation.
 */
 
-import { ConstructionState } from '../core/constructionstate.js';
-import { DrawingImplement } from '../core/drawingimplement.js';
+import { ConstructionState } from '../core/constructionstate.js'; // Corrected path
+import { DrawingImplement } from '../core/drawingimplement.js';     // Corrected path
 
 export class GeometricConstruction {
 
@@ -22,9 +24,9 @@ export class GeometricConstruction {
 
     taskManager = null;
 
-    selected = false;
+    selected = false; // Is this construction currently selected?
 
-    _implement = null;
+    _implement = null; // Holds the DrawingImplement instance (model/view part)
 
     constructor(config = {}) {
         this.rootSvg = config.rootSvg || null;
@@ -49,9 +51,10 @@ export class GeometricConstruction {
             this.selected = true;
             console.log(`${this.constructor.name} selected.`);
             if (this._implement) {
-                this._implement.data.selected = true; // Sync implement's data.selected
-                // No immediate updateVisual here; the state transition to SelectedState will call it.
+                this._implement.data.selected = true; // NEW: Sync implement's data.selected
+                this._implement.updateVisual(); // Force visual update to selected colors
             }
+            // Add any selection handles or visual cues here
             if (typeof this.showHandles === 'function') {
                 this.showHandles();
             }
@@ -63,16 +66,20 @@ export class GeometricConstruction {
             this.selected = false;
             console.log(`${this.constructor.name} deselected.`);
             if (this._implement) {
-                this._implement.data.selected = false; // Sync implement's data.selected
+                this._implement.data.selected = false; // NEW: Sync implement's data.selected
                 // No immediate updateVisual here; the state transition to NeutralState will call it.
             }
+            // Remove any selection handles or visual cues here
             if (typeof this.hideHandles === 'function') {
                 this.hideHandles();
             }
+
             // NEW: Explicitly transition to NeutralState upon deselection
             // This ensures the visual updates correctly based on the neutral state.
-            // This relies on the PointConstruction having a 'waitingForMouseEnterState' property.
-            if (this.waitingForMouseEnterState) {
+            // This relies on the specific GeometricConstruction (e.g., PointConstruction)
+            // having its 'waitingForMouseEnterState' property available.
+            // This is safer to do from the GeometricPlane, but adding here as a fallback/immediate fix.
+            if (this.waitingForMouseEnterState) { // Check if this state exists (for PointConstruction)
                 this.currentState = this.waitingForMouseEnterState;
                 this.updateVisual(); // Force visual update to neutral colors
             } else {
@@ -102,6 +109,7 @@ export class GeometricConstruction {
         });
     }
 
+    // Generic event handlers to delegate to current state
     acceptMouseDown(rootSvg, parentSvg, event) {
         if (this.currentState) this.currentState.acceptMouseDown(rootSvg, parentSvg, event);
     }
@@ -134,6 +142,7 @@ export class GeometricConstruction {
         }
     }
 
+    // Getters/Setters for properties on _implement
     get visualElement() {
         return this._implement ? this._implement.visualElement : null;
     }
@@ -177,10 +186,22 @@ export class GeometricConstruction {
     }
 
     yieldControl() {
+        // This method relies on TaskManager being set
         if (this.taskManager && typeof this.taskManager.yieldCurrentTask === 'function') {
-            this.taskManager.yieldCurrentTask();
+            this.taskManager.yieldCurrentTask(this); // Pass 'this' as the task that is yielding
         } else {
             console.error("GeometricConstruction: Cannot yield control, taskManager or yieldCurrentTask is not set.");
         }
     }
+}
+
+export class ConstructionState {
+    geometricConstruction = null;
+    acceptMouseDown(rootSvg, parentSvg, event) { }
+    acceptMouseUp(rootSvg, parentSvg, event) { }
+    acceptMouseMove(rootSvg, parentSvg, event) { }
+    acceptMouseClick(rootSvg, parentSvg, event) { }
+    acceptKeyDown(rootSvg, parentSvg, event) { }
+    acceptKeyUp(rootSvg, parentSvg, event) { }
+    acceptKeyPress(rootSvg, parentSvg, event) { }
 }

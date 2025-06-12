@@ -1,6 +1,6 @@
 ﻿/*
     wwwroot/js/interactiveelement/implements/rectangleimplement.js
-    Version: 0.1.4 // Version increment for removing ownerConstruction from constructor
+    Version: 0.1.4 // Version remains, path corrected
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 
@@ -9,10 +9,10 @@
     Represents the data and visual for a drawn rectangle.
 */
 
-import { DrawingImplement } from '../core/drawingimplement.js';
+import { DrawingImplement } from '../core/drawingimplement.js'; // Corrected path
 
 export class RectangleImplement extends DrawingImplement {
-    constructor(id, config = {}) { // Modified: No ownerConstruction parameter
+    constructor(id, config = {}) {
         super(id, { ...config, type: 'rectangle' });
         // _ownerConstruction will be explicitly assigned by the owning GeometricConstruction.
 
@@ -92,8 +92,6 @@ export class RectangleImplement extends DrawingImplement {
         // Check if mouse is within the rectangle's bounds
         const isHit = mouseX >= this.data.x && mouseX <= (this.data.x + this.data.width) &&
             mouseY >= this.data.y && mouseY <= (this.data.y + this.data.height);
-
-        // console.log(`RectangleImplement: hitTest for Rect at (${this.data.x},${this.data.y},${this.data.width},${this.data.height}) with mouse (${mouseX},${mouseY}). Hit: ${isHit}`);
 
         if (isHit) {
             return this;

@@ -1,6 +1,6 @@
 ﻿/*
     wwwroot/js/interactiveelement/geometricconstruction/geometricplane.js
-    Version: 0.2.5 // Version increment for streamlined hover logic
+    Version: 0.2.5 // Version increment for streamlined hover logic and import fixes
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 
@@ -8,8 +8,9 @@
     ===============
 */
 
-import { GeometricConstruction } from './geometricconstruction.js';
-import { ConstructionState } from '../core/constructionstate.js'; // MODIFIED PATH
+import { GeometricConstruction, ConstructionState } from './geometricconstruction.js'; // Corrected path
+// import { PointConstruction } from './pointconstruction.js'; // REMOVED - not directly used here
+import { DrawingImplement } from '../core/drawingimplement.js'; // Corrected path
 
 // States for GeometricPlane
 class GeometricPlaneIdleState extends ConstructionState {
@@ -47,6 +48,7 @@ class GeometricPlaneIdleState extends ConstructionState {
             event.isHandled = true;
 
         } else {
+            // If no object is hit, and there was a currently selected object, deselect it.
             if (this.geometricPlane.currentlySelectedObject) {
                 console.log('GeometricPlane (Idle): Mouse Down - No child hit. Deselecting current object.');
                 this.geometricPlane.currentlySelectedObject.deselect();
@@ -64,6 +66,7 @@ class GeometricPlaneIdleState extends ConstructionState {
         const interactionHitRadius = 8;
 
         // If something is currently selected, delegate all mousemoves to it for manipulation.
+        // The selected object should handle its own state changes (e.g., drag).
         if (this.geometricPlane.currentlySelectedObject && typeof this.geometricPlane.currentlySelectedObject.acceptMouseMove === 'function') {
             this.geometricPlane.currentlySelectedObject.acceptMouseMove(rootSvg, this.geometricPlane.currentlySelectedObject.localGroup, event);
             event.isHandled = true;
@@ -76,7 +79,8 @@ class GeometricPlaneIdleState extends ConstructionState {
             for (const childImplement of this.geometricPlane.children.values()) {
                 const childConstruction = childImplement._ownerConstruction;
 
-                if (childConstruction && !childConstruction.selected) { // Only manage hover for valid, non-selected controllers
+                // Ensure childConstruction exists and is not selected
+                if (childConstruction && !childConstruction.selected) {
                     if (childConstruction === currentHitConstruction) {
                         // This child is now hovered. Transition to HoverState if not already there.
                         if (childConstruction.currentState !== childConstruction.hoverState) {
@@ -116,10 +120,13 @@ class GeometricPlaneIdleState extends ConstructionState {
 
         if (clickHitConstruction) {
             console.log(`GeometricPlane (Idle): Mouse Click - Hit on ${clickHitConstruction.constructor.name}. Delegating.`);
+            // Deselect any previously selected object if it's different from the new hit
             if (this.geometricPlane.currentlySelectedObject && this.geometricPlane.currentlySelectedObject !== clickHitConstruction) {
-                this.geometricPlane.currentlySelectedObject.deselect();
+                this.geometricPlane.currentlySelectedObject.deselect(); // This will also update its visual
             }
-            clickHitConstruction.select();
+
+            // Select the new hit object
+            clickHitConstruction.select(); // This will set `selected = true` and call `updateVisual`
             this.geometricPlane.currentlySelectedObject = clickHitConstruction;
 
             if (typeof clickHitConstruction.acceptMouseClick === 'function') {
@@ -127,9 +134,10 @@ class GeometricPlaneIdleState extends ConstructionState {
             }
             event.isHandled = true;
         } else {
+            // If no object is hit, and there was a currently selected object, deselect it.
             if (this.geometricPlane.currentlySelectedObject) {
                 console.log('GeometricPlane (Idle): Mouse Click - No child hit. Deselecting current object.');
-                this.geometricPlane.currentlySelectedObject.deselect();
+                this.geometricPlane.currentlySelectedObject.deselect(); // This will also update its visual
                 this.geometricPlane.currentlySelectedObject = null;
             } else {
                 console.log('GeometricPlane (Idle): Mouse Click - no child hit. No action for this plane.');
@@ -151,7 +159,7 @@ export class GeometricPlane extends GeometricConstruction {
         super(config);
 
         this.idleState = new GeometricPlaneIdleState(this);
-        this.currentState = this.idleState;
+        this.currentState = this.idleState; // Initialize with idle state
 
         this.currentlySelectedObject = null;
     }
@@ -182,11 +190,15 @@ export class GeometricPlane extends GeometricConstruction {
     addChild(id, childImplement) {
         console.log(`GeometricPlane: Attempting to add child '${id}' (${childImplement ? childImplement.constructor.name : 'undefined'}).`);
 
-        if (!(childImplement instanceof DrawingImplement) || !childImplement._ownerConstruction) {
+        // Validation: Check if it's a valid DrawingImplement and has the ownerConstruction link
+        // The _ownerConstruction should now be set *before* addChild is called, by the GC itself.
+        // Use window.DrawingImplement for the instanceof check due to potential module loading nuances.
+        if (!(childImplement instanceof window.DrawingImplement) || !childImplement._ownerConstruction) {
             console.error(`GeometricPlane: Attempted to add invalid DrawingImplement (missing _ownerConstruction). ID: ${id}, Implement:`, childImplement);
             return;
         }
 
+        // Additional validation for context properties (rootSvg, localGroup) that are essential for visual management
         if (!childImplement.rootSvg || !childImplement.localGroup) {
             console.error(`GeometricPlane: Child implement '${id}' is missing rootSvg or localGroup context. Cannot add.`, childImplement);
             return;
@@ -202,10 +214,12 @@ export class GeometricPlane extends GeometricConstruction {
         this.children.set(id, childImplement);
         console.log(`GeometricPlane: Child implement '${id}' (${childImplement.constructor.name}) added to internal map.`);
 
+        // Ensure the implement's visual is created and placed
         if (!childImplement.visualElement) {
             console.log(`GeometricPlane: Calling createVisual on child implement '${id}'.`);
             childImplement.createVisual(childImplement.rootSvg, childImplement.localGroup);
         } else {
+            // If visual already exists, ensure it's in the correct parent and visible
             if (childImplement.visualElement.parentNode !== childImplement.localGroup) {
                 console.warn(`GeometricPlane: Child implement visual for '${id}' is in wrong parent. Moving.`);
                 childImplement.localGroup.appendChild(childImplement.visualElement);
@@ -226,7 +240,7 @@ export class GeometricPlane extends GeometricConstruction {
         const childImplement = this.children.get(id);
         if (childImplement) {
             if (childImplement._ownerConstruction) {
-                childImplement._ownerConstruction.deselect();
+                childImplement._ownerConstruction.deselect(); // Ensure controller is deselected
             }
             childImplement.removeVisual();
             this.children.delete(id);
@@ -272,22 +286,13 @@ export class GeometricPlane extends GeometricConstruction {
     }
 
     updateVisual() {
+        // This method should iterate through all children and call their updateVisual
+        // This is primarily called by GeometricPlane's idle state to refresh all children's visuals
         for (const childImplement of this.children.values()) {
             if (typeof childImplement.updateVisual === 'function') {
                 childImplement.updateVisual();
             }
         }
-    }
-
-    stop(rootSvg) {
-        for (const childId of Array.from(this.children.keys())) {
-            this.removeChild(childId);
-        }
-        if (this.visualElement && this.visualElement.parentNode) {
-            this.visualElement.parentNode.removeChild(this.visualElement);
-            this.visualElement = null;
-        }
-        super.stop();
     }
 
     isFinished() {

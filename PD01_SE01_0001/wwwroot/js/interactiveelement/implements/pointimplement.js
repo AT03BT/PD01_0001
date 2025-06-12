@@ -1,6 +1,6 @@
 ﻿/*
-    wwwroot/js/interactiveelement/page8/implements/pointimplement.js
-    Version: 0.1.6 // Version increment for handling null ID and initial visual state
+    wwwroot/js/interactiveelement/implements/pointimplement.js
+    Version: 0.1.6 // Version increment for debugging fill color and correct visual logic
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 
@@ -8,7 +8,7 @@
     ===============
 */
 
-import { DrawingImplement } from '../core/drawingimplement.js';
+import { DrawingImplement } from '../core/drawingimplement.js'; // Corrected path
 
 export class PointImplement extends DrawingImplement {
     constructor(id, config = {}) {
@@ -22,9 +22,10 @@ export class PointImplement extends DrawingImplement {
         this.data.strokeWidth = config.strokeWidth || 1; // Default initial stroke width
         this.data.class = config.class || 'block-point'; // CSS class
 
-        this.data.selected = false;
-        this.data.currentState = null;
-        this.data.hoverState = null;
+        // These properties will be passed via this.data from PointConstruction.updateVisual()
+        this.data.selected = false; // Will be boolean from GeometricConstruction.selected
+        this.data.currentState = null; // Will be reference to current state object
+        this.data.hoverState = null; // Will be reference to hoverState object
     }
 
     createVisual(rootSvg, localGroup, attributes = {}) {
@@ -41,9 +42,9 @@ export class PointImplement extends DrawingImplement {
                 this.localGroup.appendChild(this.visualElement);
             } else if (this.rootSvg) {
                 this.rootSvg.appendChild(this.visualElement);
-                console.warn(`PointImplement: No localGroup for ${this.id}. Appending to rootSvg.`);
+                console.warn(`PointImplement: No localGroup for ${this.id || 'null'}. Appending to rootSvg.`); // Log ID
             } else {
-                console.error(`PointImplement: Cannot append visual for ${this.id}. Neither localGroup nor rootSvg available.`);
+                console.error(`PointImplement: Cannot append visual for ${this.id || 'null'}. Neither localGroup nor rootSvg available.`); // Log ID
             }
         }
         for (const key in attributes) {
@@ -66,14 +67,15 @@ export class PointImplement extends DrawingImplement {
             if (this.data.selected) {
                 newStroke = 'blue';
                 newStrokeWidth = 2;
-                newFill = 'black';
+                newFill = 'black'; // Selected object has black fill by default
             } else {
-                newStroke = 'black';
+                newStroke = 'black'; // Default stroke for non-selected
                 newStrokeWidth = 1;
+                // Check if it's currently in HoverState (via the passed state reference)
                 if (this.data.currentState && this.data.currentState.constructor.name === 'HoverState') { // Check constructor name directly
-                    newFill = 'grey';
+                    newFill = 'grey'; // Hover fill
                 } else {
-                    newFill = 'black';
+                    newFill = 'black'; // Default fill when not selected and not hovered
                 }
             }
 
@@ -81,7 +83,7 @@ export class PointImplement extends DrawingImplement {
             this.visualElement.style.stroke = newStroke;
             this.visualElement.style.strokeWidth = newStrokeWidth.toString();
 
-            console.log(`PointImplement: Updated visual for ID ${this.id || 'null'}. Selected: ${this.data.selected}, CurrentState: ${this.data.currentState ? this.data.currentState.constructor.name : 'None'}, Applied Fill: ${newFill}, Stroke: ${newStroke}`); // Changed ID logging
+            console.log(`PointImplement: Updated visual for ID ${this.id || 'null'}. Selected: ${this.data.selected}, CurrentState: ${this.data.currentState ? this.data.currentState.constructor.name : 'None'}, Applied Fill: ${newFill}, Stroke: ${newStroke}`); // NEW LOG
         }
     }
 

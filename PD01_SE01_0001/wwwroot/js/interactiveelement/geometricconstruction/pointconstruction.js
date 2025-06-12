@@ -1,13 +1,12 @@
 ﻿/*
-    wwwroot/js/interactiveelement/page8/geometricconstruction/pointconstruction.js
+    wwwroot/js/interactiveelement/geometricconstruction/pointconstruction.js
     Version: 1.2.9 // Version increment for refined initial visual state and ID setting
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 */
 
-import { GeometricConstruction } from './geometricconstruction.js';
-import { ConstructionState } from '../core/constructionstate.js';
-import { PointImplement } from '../implements/pointimplement.js';
+import { GeometricConstruction, ConstructionState } from './geometricconstruction.js'; // Corrected path
+import { PointImplement } from '../implements/pointimplement.js'; // Corrected path
 
 // --- PointConstruction States ---
 
@@ -234,14 +233,14 @@ class WaitingForMouseDownOnAdditionState extends ConstructionState {
                 this.geometricConstruction._implement.id = `point-${Date.now()}`;
             }
 
-            this.geometricConstruction.isAddedToPlane = true;
+            this.geometricConstruction.isAddedToPlane = true; // NEW: Mark as added
             this.geometricConstruction.yieldControl(); // Yield control to TaskManager
 
-            // NEW: Do NOT transition to NeutralState immediately. Let the GeometricPlane's
+            // NEW: Do NOT transition to NeutralState immediately here. Let the GeometricPlane's
             // click event handle the actual selection or just let it stay neutral.
             // The purpose of this state is to finish the drawing task, not to set the post-drawing interactive state.
             // this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState; // REMOVED
-            event.isHandled = true; // Mark event as handled to stop click propagation
+            event.isHandled = true; // NEW: Crucial to prevent immediate selection by subsequent click event
         } else {
             // console.log('PointState (OnAddition WaitingForMouseDown): Mouse up - no mousedown detected in this state, no action.');
         }
@@ -250,7 +249,7 @@ class WaitingForMouseDownOnAdditionState extends ConstructionState {
     acceptMouseClick(rootSvg, parentSvg, event) {
         // If this click event is not handled by mouseup, ensure it's marked as handled
         // to prevent immediate selection when the point is just placed.
-        event.isHandled = true; // NEW
+        event.isHandled = true; // NEW: Mark event as handled to stop click propagation
     }
 }
 
@@ -294,6 +293,7 @@ export class PointConstruction extends GeometricConstruction {
 
     _implement = null;
 
+    // isAddedToPlane is now a flag on the Construction itself (not its implement's data)
     isAddedToPlane = false;
 
     constructor(config = {}) {
@@ -325,9 +325,7 @@ export class PointConstruction extends GeometricConstruction {
             this._implement.removeVisual();
         }
         this.isAddedToPlane = false;
-        // NEW: Reset isAddedToPlane on startDrawing
-        // Also ensure _implement's ID is reset for a new drawing cycle
-        this._implement.id = null;
+        this._implement.id = null; // NEW: Reset _implement ID for a new drawing cycle
         console.log('PointConstruction: Started drawing, entered EnqueuedForDrawingState.');
     }
 

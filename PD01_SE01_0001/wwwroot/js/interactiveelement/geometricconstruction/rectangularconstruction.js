@@ -1,34 +1,44 @@
 ﻿/*
     wwwroot/js/interactiveelement/geometricconstruction/rectangularconstruction.js
-    Version: 0.4.7 // Version increment for robust _ownerConstruction assignment
+    Version: 0.4.8 // Version increment for corrected import paths
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
+
+    Rectangular Construction
+    ========================
 */
 
-import { GeometricConstruction } from './geometricconstruction.js';
-import { ConstructionState } from '../core/constructionstate.js'; // MODIFIED PATH
-import { PointConstruction } from './pointconstruction.js';
-import { RectangleImplement } from '../implements/rectangleimplement.js'; // Correct path
-import { PointImplement } from '../implements/pointimplement.js'; // Correct path
+import { GeometricConstruction } from './geometricconstruction.js'; // Corrected path
+import { ConstructionState } from '../core/constructionstate.js';   // Corrected path
+import { PointConstruction } from './pointconstruction.js';         // Corrected path (used for corner handles)
+import { RectangleImplement } from '../implements/rectangleimplement.js'; // Corrected path
+import { PointImplement } from '../implements/pointimplement.js';     // Corrected path
 
 // --- RectangularConstruction States (Creation Flow) ---
 class WaitingForPoint_A extends ConstructionState {
-    constructor(config = {}) {
-        super(config);
+    constructor(geometricConstruction) { // Passed geometricConstruction directly
+        super(); // Call super without config
+        this.geometricConstruction = geometricConstruction;
 
         this.pointA = null;
         this.pointB = null;
-        this.addSelfToPlane = config.addSelfToPlane;
 
         // Initialize RectangleImplement which holds x,y,width,height
-        // MODIFIED: Pass 'ownerConstruction: this' to the RectangleImplement constructor
         this._implement = new RectangleImplement(null, { // ID will be set by GeometricPlane.addChild
             x: 0, y: 0, width: 0, height: 0, // Initial default values
-            rootSvg: this.rootSvg,
-            localGroup: this.localGroup,
-            ownerConstruction: this // NEW: Pass reference to this RectangularConstruction instance
+            rootSvg: this.geometricConstruction.rootSvg, // Use construction's rootSvg
+            localGroup: this.geometricConstruction.localGroup // Use construction's localGroup
         });
+        // Explicitly assign _ownerConstruction
+        this._implement._ownerConstruction = this.geometricConstruction;
 
+        // Initialize PointImplement for top-left handle visual feedback
+        this.geometricConstruction.topLeft = new PointConstruction({
+            rootSvg: this.geometricConstruction.rootSvg,
+            localGroup: this.geometricConstruction.localGroup // Handles will be in the same group as the rectangle
+        });
+        // Ensure its implement has a non-null ID if it's to be added by TaskManager later
+        this.geometricConstruction.topLeft._implement.id = `rect-handle-tl-${Date.now()}`;
     }
 
     acceptMouseUp(rootSvg, parentSvg, event) {
@@ -44,6 +54,7 @@ class WaitingForPoint_A extends ConstructionState {
         const x = event.clientX - rootSvg.getBoundingClientRect().left;
         const y = event.clientY - rootSvg.getBoundingClientRect().top;
         this.geometricConstruction.setPointA(x, y);
+        // Only create the rectangle visual after the first point is set
         this.geometricConstruction.setConstructionVisual(rootSvg, parentSvg, x, y);
         this.geometricConstruction.currentState = this.geometricConstruction.waitingForPointBState;
         console.log('RectangularConstruction: WaitingForPoint_A - Point A set');
@@ -67,78 +78,49 @@ class WaitingForPoint_B extends ConstructionState {
     acceptMouseMove(rootSvg, parentSvg, event) {
         const x = event.clientX - rootSvg.getBoundingClientRect().left;
         const y = event.clientY - rootSvg.getBoundingClientRect().top;
-
-        if (this.geometricConstruction.bottomRight && !this.geometricConstruction.bottomRight.visualElement) {
-            this.geometricConstruction.bottomRight.createVisual(rootSvg, parentSvg);
-        }
-        if (this.geometricConstruction.bottomRight) {
-            this.geometricConstruction.bottomRight.updatePosition(x, y, true);
-        }
-
-        this.geometricConstruction.updateConstructionVisual(x, y);
+        this.geometricConstruction.setPointB(x, y); // Update point B in real-time
+        this.geometricConstruction.updateSizeAndPosition(); // Update rectangle visual based on points
     }
 
     acceptMouseUp(rootSvg, parentSvg, event) {
-        const isValidTarget = event.target === rootSvg ||
-            event.target === parentSvg ||
-            (this.geometricConstruction.visualElement && event.target === this.geometricConstruction.visualElement) ||
-            (this.geometricConstruction.bottomRight && event.target === this.geometricConstruction.bottomRight.visualElement);
-
-        if (!isValidTarget) {
-            console.log('RectangularConstruction (WaitingForPoint_B): Mouseup target is not a valid creation visual. Ignoring for creation.');
-            return;
-        }
-
         const x = event.clientX - rootSvg.getBoundingClientRect().left;
         const y = event.clientY - rootSvg.getBoundingClientRect().top;
-        this.geometricConstruction.setPointB(x, y);
-        this.geometricConstruction.finalise(rootSvg, parentSvg);
-        console.log('RectangularConstruction: WaitingForPoint_B - Point B set, rectangle finalised, yielding control.');
+        this.geometricConstruction.setPointB(x, y); // Finalize point B
+        this.geometricConstruction.updateSizeAndPosition(); // Finalize rectangle visual
 
-        // REMOVED: All calls to this.geometricConstruction.addSelfToPlane(...)
-        // and the isAddedToPlane flag logic.
-        // This is now handled by TaskManager.yieldCurrentTask().
+        // Generate ID for the rectangle itself before yielding
+        if (!this.geometricConstruction._implement.id) {
+            this.geometricConstruction._implement.id = `rectangle-${Date.now()}`;
+        }
 
-        this.geometricConstruction.yieldControl();
-        this.geometricConstruction.currentState = this.geometricConstruction.idleState;
-        event.isHandled = true;
-    }
-
-    acceptMouseDown(rootSvg, parentSvg, event) {
-        // ...
+        this.geometricConstruction.yieldControl(); // Yield control to TaskManager
+        this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState; // Transition to Neutral after creation
+        event.isHandled = true; // Mark as handled
+        console.log('RectangularConstruction: WaitingForPoint_B - Rectangle finalized.');
     }
 }
 
-
-// IdleState for RectangularConstruction
-class IdleState extends ConstructionState {
+// Selection states (similar to PointConstruction, but for rectangle)
+class RectangularIdleState extends ConstructionState {
     constructor(geometricConstruction) {
         super();
         this.geometricConstruction = geometricConstruction;
-        console.log('RectangularConstruction: Entered IdleState. Ready for selection/manipulation.');
-        // Ensure rectangle visual is black (default) and handles are hidden on entry
-        this.geometricConstruction.deselect(); // This also updates visual for RC
-        this.geometricConstruction.hideHandles(); // CORRECTED: Call on this.geometricConstruction directly
+        console.log('RectangularConstruction: Entered IdleState (Neutral).');
+        this.geometricConstruction.updateVisual();
     }
 
     acceptMouseDown(rootSvg, parentSvg, event) {
         const mouseX = event.clientX - rootSvg.getBoundingClientRect().left;
         const mouseY = event.clientY - rootSvg.getBoundingClientRect().top;
-        const hitResult = this.geometricConstruction.hitTest(mouseX, mouseY);
+        const hitRadius = 8; // For handle hit testing
 
-        if (hitResult instanceof PointConstruction) {
-            console.log('RectangularConstruction (Idle): Hit on corner point, delegating to point.');
-            if (!this.geometricConstruction.selected) {
-                this.geometricConstruction.select();
-            }
-            hitResult.acceptMouseDown(rootSvg, parentSvg, event);
-            event.isHandled = true;
-        } else if (hitResult === this.geometricConstruction) {
-            console.log('RectangularConstruction (Idle): Hit on body, initiating drag of rectangle (future state).');
+        if (this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
+            // If the rectangle body is hit, select it and prepare for drag
             this.geometricConstruction.select();
-            event.isHandled = true;
+            this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseUpOnDragState;
+            console.log('RectangularConstruction (Idle): Mouse down - Hit, transitioning to WaitingForMouseUpOnDragState (for drag).');
         } else {
-            // console.log('RectangularConstruction (Idle): Clicked outside of this rectangle, no action.');
+            // Not a hit. GeometricPlane will handle deselecting others if necessary.
         }
     }
 
@@ -147,345 +129,322 @@ class IdleState extends ConstructionState {
         const mouseY = event.clientY - rootSvg.getBoundingClientRect().top;
         const hitRadius = 8;
 
-        const hitResult = this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius);
-
-        if (!this.geometricConstruction.selected) {
-            if (hitResult) {
-                this.geometricConstruction.showHandles();
-            } else {
-                this.geometricConstruction.hideHandles();
+        if (this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
+            if (!this.geometricConstruction.selected) {
+                this.geometricConstruction.currentState = this.geometricConstruction.hoverState;
+                console.log('RectangularConstruction (Idle): Mouse over - Hit, transitioning to HoverState.');
             }
         } else {
-            this.geometricConstruction.showHandles();
+            // No hit, ensure it's not in hover state
+            if (this.geometricConstruction.currentState === this.geometricConstruction.hoverState) {
+                this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState;
+                console.log('RectangularConstruction (Idle): Mouse off - No hit, transitioning to NeutralState.');
+            }
         }
+    }
+
+    acceptMouseUp(rootSvg, parentSvg, event) { }
+    acceptMouseClick(rootSvg, parentSvg, event) { }
+}
+
+class RectangularHoverState extends ConstructionState {
+    constructor(geometricConstruction) {
+        super();
+        this.geometricConstruction = geometricConstruction;
+        console.log('RectangularConstruction: Entered HoverState.');
+        this.geometricConstruction.updateVisual(); // To grey
+    }
+
+    acceptMouseDown(rootSvg, parentSvg, event) {
+        const mouseX = event.clientX - rootSvg.getBoundingClientRect().left;
+        const mouseY = event.clientY - rootSvg.getBoundingClientRect().top;
+        const hitRadius = 8;
+
+        if (this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
+            this.geometricConstruction.select();
+            this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseUpOnDragState;
+            console.log('RectangularConstruction (Hover): Mouse down - Hit, transitioning to WaitingForMouseUpOnDragState (for drag).');
+        } else {
+            this.geometricConstruction.deselect();
+            this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState;
+            console.log('RectangularConstruction (Hover): Mouse down - Not a hit, transitioning to NeutralState.');
+        }
+    }
+
+    acceptMouseMove(rootSvg, parentSvg, event) {
+        const mouseX = event.clientX - rootSvg.getBoundingClientRect().left;
+        const mouseY = event.clientY - rootSvg.getBoundingClientRect().top;
+        const hitRadius = 8;
+
+        if (!this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
+            this.geometricConstruction.deselect();
+            this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState;
+            console.log('RectangularConstruction (Hover): Mouse off - No hit, transitioning to NeutralState.');
+        } else {
+            this.geometricConstruction.updateVisual(); // Still hovered
+        }
+    }
+
+    acceptMouseUp(rootSvg, parentSvg, event) { }
+    acceptMouseClick(rootSvg, parentSvg, event) { }
+}
+
+class RectangularSelectedState extends ConstructionState {
+    constructor(geometricConstruction) {
+        super();
+        this.geometricConstruction = geometricConstruction;
+        console.log('RectangularConstruction: Entered SelectedState.');
+        this.geometricConstruction.updateVisual(); // To blue
+    }
+
+    acceptMouseDown(rootSvg, parentSvg, event) {
+        const mouseX = event.clientX - rootSvg.getBoundingClientRect().left;
+        const mouseY = event.clientY - rootSvg.getBoundingClientRect().top;
+        const hitRadius = 8;
+
+        if (this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
+            this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseUpOnDragState;
+            console.log('RectangularConstruction (Selected): Mouse down - Hit, transitioning to WaitingForMouseUpOnDragState (for drag).');
+        }
+    }
+
+    acceptMouseMove(rootSvg, parentSvg, event) {
+        this.geometricConstruction.updateVisual();
+    }
+
+    acceptMouseUp(rootSvg, parentSvg, event) { }
+    acceptMouseClick(rootSvg, parentSvg, event) { }
+}
+
+class WaitingForMouseUpOnDragState extends ConstructionState {
+    constructor(geometricConstruction) {
+        super();
+        this.geometricConstruction = geometricConstruction;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+        console.log('RectangularConstruction: Entered WaitingForMouseUpOnDragState.');
+    }
+
+    acceptMouseDown(rootSvg, parentSvg, event) {
+        // Store starting drag position for offset calculation
+        this.dragStartX = event.clientX - rootSvg.getBoundingClientRect().left;
+        this.dragStartY = event.clientY - rootSvg.getBoundingClientRect().top;
+        console.log('RectangularConstruction: Drag started at', this.dragStartX, this.dragStartY);
+    }
+
+    acceptMouseMove(rootSvg, parentSvg, event) {
+        const currentX = event.clientX - rootSvg.getBoundingClientRect().left;
+        const currentY = event.clientY - rootSvg.getBoundingClientRect().top;
+
+        const deltaX = currentX - this.dragStartX;
+        const deltaY = currentY - this.dragStartY;
+
+        // Update rectangle's position relative to its original position before drag
+        this.geometricConstruction.x += deltaX;
+        this.geometricConstruction.y += deltaY;
+
+        // Re-set drag start for continuous dragging based on new position
+        this.dragStartX = currentX;
+        this.dragStartY = currentY;
+
+        this.geometricConstruction.updateVisual();
+        console.log('RectangularConstruction: Dragging to', this.geometricConstruction.x, this.geometricConstruction.y);
     }
 
     acceptMouseUp(rootSvg, parentSvg, event) {
-        console.log('RectangularConstruction (Idle): Mouse up - no action.');
-    }
-
-    acceptMouseClick(rootSvg, parentSvg, event) {
-        const mouseX = event.clientX - rootSvg.getBoundingClientRect().left;
-        const mouseY = event.clientY - rootSvg.getBoundingClientRect().top;
-        const hitResult = this.geometricConstruction.hitTest(mouseX, mouseY);
-
-        if (hitResult) {
-            this.geometricConstruction.select();
-        } else {
-            // No hit, GeometricPlane will handle deselect if needed
-        }
+        console.log('RectangularConstruction: Mouse up - drag stopped.');
+        this.geometricConstruction.currentState = this.geometricConstruction.selectedState; // Transition back to selected
     }
 }
 
-
 // --- RectangularConstruction Class ---
 export class RectangularConstruction extends GeometricConstruction {
-
-    pointA = null;
-    pointB = null;
-    _implement = null; // Holds the RectangleImplement instance
-
-    topLeft = null;
+    pointA = { x: 0, y: 0 };
+    pointB = { x: 0, y: 0 };
+    topLeft = null; // PointConstruction for top-left handle
     topRight = null;
     bottomLeft = null;
     bottomRight = null;
 
-    waitingForPointAState = null;
-    waitingForPointBState = null;
-    idleState = null;
+    // States
+    waitingForPointAState;
+    waitingForPointBState;
+    waitingForMouseEnterState;
+    hoverState;
+    selectedState;
+    waitingForMouseUpOnDragState;
 
-    // REMOVED: addSelfToPlane = null;
-    // REMOVED: isAddedToPlane = false;
+    _implement = null; // RectangleImplement instance
+
+    isAddedToPlane = false;
 
     constructor(config = {}) {
         super(config);
 
-        this.pointA = null;
-        this.pointB = null;
-        this.addSelfToPlane = config.addSelfToPlane;
+        this.waitingForPointAState = new WaitingForPoint_A(this);
+        this.waitingForPointBState = new WaitingForPoint_B(this);
+        this.waitingForMouseEnterState = new RectangularIdleState(this);
+        this.hoverState = new RectangularHoverState(this);
+        this.selectedState = new RectangularSelectedState(this);
+        this.waitingForMouseUpOnDragState = new WaitingForMouseUpOnDragState(this);
 
-        // Initialize RectangleImplement which holds x,y,width,height
-        // MODIFIED: RectangleImplement no longer receives ownerConstruction as a parameter
-        this._implement = new RectangleImplement(null, {
-            x: 0, y: 0, width: 0, height: 0, // Initial default values
+        this.currentState = this.waitingForMouseEnterState; // Default to neutral
+
+        // Handles for resizing
+        this.topLeft = new PointConstruction({
+            rootSvg: this.rootSvg,
+            localGroup: this.localGroup,
+            r: 5, // Larger radius for handles
+            fill: 'red',
+            stroke: 'red',
+            strokeWidth: 1
+        });
+        this.topRight = new PointConstruction({
+            rootSvg: this.rootSvg,
+            localGroup: this.localGroup,
+            r: 5, fill: 'red', stroke: 'red', strokeWidth: 1
+        });
+        this.bottomLeft = new PointConstruction({
+            rootSvg: this.rootSvg,
+            localGroup: this.localGroup,
+            r: 5, fill: 'red', stroke: 'red', strokeWidth: 1
+        });
+        this.bottomRight = new PointConstruction({
+            rootSvg: this.rootSvg,
+            localGroup: this.localGroup,
+            r: 5, fill: 'red', stroke: 'red', strokeWidth: 1
+        });
+
+        // Explicitly set ownerConstruction for handles
+        this.topLeft._implement._ownerConstruction = this;
+        this.topRight._implement._ownerConstruction = this;
+        this.bottomLeft._implement._ownerConstruction = this;
+        this.bottomRight._implement._ownerConstruction = this;
+
+        // Initialize RectangleImplement itself
+        this._implement = new RectangleImplement(null, { // ID will be set by GeometricPlane.addChild
+            x: 0, y: 0, width: 0, height: 0,
             rootSvg: this.rootSvg,
             localGroup: this.localGroup
         });
+        this._implement._ownerConstruction = this; // Explicitly set ownerConstruction
 
-        // NEW: Explicitly assign _ownerConstruction to the implement here.
-        this._implement._ownerConstruction = this;
-
-        this.waitingForPointAState = new WaitingForPoint_A(this);
-        this.waitingForPointBState = new WaitingForPoint_B(this);
-        this.idleState = new IdleState(this);
-
-        this.currentState = this.waitingForPointAState;
-
-        // Initialize corner PointConstruction instances (controllers for point handles)
-        // They will also explicitly set their _implement._ownerConstruction.
-        this.topLeft = new PointConstruction({ rootSvg: this.rootSvg, parentSvg: this.localGroup });
-        this.topRight = new PointConstruction({ rootSvg: this.rootSvg, parentSvg: this.localGroup });
-        this.bottomLeft = new PointConstruction({ rootSvg: this.rootSvg, parentSvg: this.localGroup });
-        this.bottomRight = new PointConstruction({ rootSvg: this.rootSvg, parentSvg: this.localGroup });
-
-        this.registerObservers();
+        this.isAddedToPlane = false;
     }
 
     startDrawing() {
         this.currentState = this.waitingForPointAState;
+        this.isAddedToPlane = false;
+        // Remove rectangle visual if it was previously drawn
         if (this._implement.visualElement && this._implement.visualElement.parentNode) {
             this._implement.removeVisual();
         }
-        if (this.topLeft) this.topLeft.stop(this.rootSvg);
-        if (this.topRight) this.topRight.stop(this.rootSvg);
-        if (this.bottomLeft) this.bottomLeft.stop(this.rootSvg);
-        if (this.bottomRight) this.bottomRight.stop(this.rootSvg);
-
-        this.pointA = null;
-        this.pointB = null;
-        this.x = 0;
-        this.y = 0;
-        this.width = 0;
-        this.height = 0;
-        this._implement.data.x = 0;
-        this._implement.data.y = 0;
-        this._implement.data.width = 0;
-        this._implement.data.height = 0;
-
-        // REMOVED: this.isAddedToPlane = false;
-        console.log('RectangularConstruction: Start drawing command received. Ready to define point A.');
+        // Hide handles during initial drawing
+        this.hideHandles();
+        console.log('RectangularConstruction: Started drawing, waiting for Point A.');
     }
 
     setPointA(x, y) {
-        this.pointA = { x: x, y: y };
-        this.x = x;
-        this.y = y;
-
-        if (this.topLeft) {
-            this.topLeft.updatePosition(x, y, true);
-            this.topLeft.createVisual(this.rootSvg, this.localGroup);
-        }
+        this.pointA = { x, y };
+        // Place initial handle
+        this.topLeft.updatePosition(x, y);
+        this.topLeft.createVisual(this.rootSvg, this.localGroup); // Ensure handle visual is created
+        this.topLeft.updateVisual(); // Update its visual
+        console.log('RectangularConstruction: Point A set at', x, y);
     }
 
     setPointB(x, y) {
-        this.pointB = { x: x, y: y };
-
-        const x1 = this.pointA.x;
-        const y1 = this.pointA.y;
-        const x2 = x;
-        const y2 = y;
-
-        this.x = Math.min(x1, x2);
-        this.y = Math.min(y1, y2);
-        this.width = Math.abs(x2 - x1);
-        this.height = Math.abs(y2 - y1);
-
-        this.updateCornerPositions(true);
+        this.pointB = { x, y };
+        console.log('RectangularConstruction: Point B updated to', x, y);
     }
 
-    setConstructionVisual(rootSvg, parentSvg, x1, y1) {
-        this._implement.createVisual(rootSvg, parentSvg, {
-            svgType: 'rect',
-            x: x1, y: y1, width: 0, height: 0,
-            stroke: 'black', fill: 'none', class: 'construction-rectangle'
-        });
+    updateSizeAndPosition() {
+        const x = Math.min(this.pointA.x, this.pointB.x);
+        const y = Math.min(this.pointA.y, this.pointB.y);
+        const width = Math.abs(this.pointA.x - this.pointB.x);
+        const height = Math.abs(this.pointA.y - this.pointB.y);
+
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+
+        // Update handle positions
+        this.topLeft.updatePosition(x, y, true);
+        this.topRight.updatePosition(x + width, y, true);
+        this.bottomLeft.updatePosition(x, y + height, true);
+        this.bottomRight.updatePosition(x + width, y + height, true);
+
+        // Ensure rectangle visual is created and updated
+        if (!this._implement.visualElement) {
+            this.createVisual(this.rootSvg, this.localGroup);
+        }
+        this.updateVisual();
     }
 
-    updateConstructionVisual(x2, y2) {
-        if (this._implement.visualElement && this.pointA) {
-            const x1 = this.pointA.x;
-            const y1 = this.pointA.y;
+    // `createVisual` for the rectangle itself
+    createVisual(rootSvg, parentSvg) {
+        this._implement.createVisual(rootSvg, parentSvg);
+    }
 
-            this._implement.data.x = Math.min(x1, x2);
-            this._implement.data.y = Math.min(y1, y2);
-            this._implement.data.width = Math.abs(x2 - x1);
-            this._implement.data.height = Math.abs(y2 - y1);
+    // `updateVisual` for the rectangle itself (delegates to implement)
+    updateVisual() {
+        if (this._implement) {
+            this._implement.data.selected = this.selected; // Pass selection state
+            this._implement.data.currentState = this.currentState; // Pass current state
+            this._implement.data.hoverState = this.hoverState;     // Pass hover state
             this._implement.updateVisual();
-
-            if (this.topRight) this.topRight.updatePosition(this._implement.data.x + this._implement.data.width, this._implement.data.y, true);
-            if (this.bottomLeft) this.bottomLeft.updatePosition(this._implement.data.x, this._implement.data.y + this._implement.data.height, true);
-            if (this.bottomRight) this.bottomRight.updatePosition(this._implement.data.x + this._implement.data.width, this._implement.data.y + this._implement.data.height, true);
-            if (this.topLeft) this.topLeft.updatePosition(this._implement.data.x, this._implement.data.y, true);
         }
-    }
 
-    finalise(rootSvg, parentSvg) {
-        if (this.pointA && this.pointB) {
-            this._implement.data.class = 'final-rectangle';
-            this._implement.data.stroke = 'black';
-            this._implement.data.strokeWidth = 1;
-            this._implement.data.fill = 'none';
-            this._implement.updateVisual();
-
-            this.showCornerVisuals(rootSvg, parentSvg);
-        }
-    }
-
-    registerObservers() {
-        if (this.topLeft) this.topLeft.addObserver(this);
-        if (this.topRight) this.topRight.addObserver(this);
-        if (this.bottomLeft) this.bottomLeft.addObserver(this);
-        if (this.bottomRight) this.bottomRight.addObserver(this);
-    }
-
-    onConstructionChanged(construction, changeDescription) {
-        if (changeDescription === 'moved') {
-            if (construction instanceof PointConstruction) {
-                this.updateFromCorner(construction);
-                this.updateVisual();
-            }
-        }
-    }
-
-    updateFromCorner(movedPoint) {
-        let x1 = this.topLeft.x;
-        let y1 = this.topLeft.y;
-        let x2 = this.topRight.x;
-        let y2 = this.topRight.y;
-        let x3 = this.bottomLeft.x;
-        let y3 = this.bottomLeft.y;
-        let x4 = this.bottomRight.x;
-        let y4 = this.bottomRight.y;
-
-        const newMinX = Math.min(x1, x2, x3, x4);
-        const newMinY = Math.min(y1, y2, y3, y4);
-        const newMaxX = Math.max(x1, x2, x3, x4);
-        const newMaxY = Math.max(y1, y2, y3, y4);
-
-        this.x = newMinX;
-        this.y = newMinY;
-        this.width = newMaxX - newMinX;
-        this.height = newMaxY - newMinY;
-
-        this.updateCornerPositions(true);
-    }
-
-    updateCornerPositions(isInternal = false) {
-        if (this.topLeft) this.topLeft.updatePosition(this.x, this.y, isInternal);
-        if (this.topRight) this.topRight.updatePosition(this.x + this.width, this.y, isInternal);
-        if (this.bottomLeft) this.bottomLeft.updatePosition(this.x, this.y + this.height, isInternal);
-        if (this.bottomRight) this.bottomRight.updatePosition(this.x + this.width, this.y + this.height, isInternal);
-    }
-
-    /**
-     * Shows the visual elements of the corner PointConstruction instances (handles).
-     */
-    showHandles() {
-        // Ensure handles are created and visible
-        if (this.topLeft) {
-            this.topLeft.createVisual(this.rootSvg, this.localGroup);
-            this.topLeft.updateVisual();
-        }
-        if (this.topRight) {
-            this.topRight.createVisual(this.rootSvg, this.localGroup);
-            this.topRight.updateVisual();
-        }
-        if (this.bottomLeft) {
-            this.bottomLeft.createVisual(this.rootSvg, this.localGroup);
-            this.bottomLeft.updateVisual();
-        }
-        if (this.bottomRight) {
-            this.bottomRight.createVisual(this.rootSvg, this.localGroup);
-            this.bottomRight.updateVisual();
-        }
-    }
-
-    /**
-     * Hides the visual elements of the corner PointConstruction instances (handles).
-     */
-    hideHandles() {
-        // Ensure handles are removed from DOM
-        if (this.topLeft) this.topLeft.stop(this.rootSvg);
-        if (this.topRight) this.topRight.stop(this.rootSvg);
-        if (this.bottomLeft) this.bottomLeft.stop(this.rootSvg);
-        if (this.bottomRight) this.bottomRight.stop(this.rootSvg);
+        // Update handle visuals
+        this.topLeft.updateVisual();
+        this.topRight.updateVisual();
+        this.bottomLeft.updateVisual();
+        this.bottomRight.updateVisual();
     }
 
     hitTest(mouseX, mouseY, hitRadius = 8) {
-        if (this.topLeft && this.topLeft.hitTest(mouseX, mouseY, hitRadius)) return this.topLeft;
-        if (this.topRight && this.topRight.hitTest(mouseX, mouseY, hitRadius)) return this.topRight;
-        if (this.bottomLeft && this.bottomLeft.hitTest(mouseX, mouseY, hitRadius)) return this.bottomLeft;
-        if (this.bottomRight && this.bottomRight.hitTest(mouseX, mouseY, hitRadius)) return this.bottomRight;
+        // Prioritize handle hit test
+        let hitHandle = this.topLeft.hitTest(mouseX, mouseY, hitRadius) ||
+            this.topRight.hitTest(mouseX, mouseY, hitRadius) ||
+            this.bottomLeft.hitTest(mouseX, mouseY, hitRadius) ||
+            this.bottomRight.hitTest(mouseX, mouseY, hitRadius);
 
+        if (hitHandle) {
+            return hitHandle._ownerConstruction; // Return the PointConstruction of the handle
+        }
+
+        // Then check rectangle body hit test
         if (this._implement && typeof this._implement.hitTest === 'function') {
             if (this._implement.hitTest(mouseX, mouseY, hitRadius)) {
-                return this;
+                return this; // Return this RectangularConstruction instance
             }
         }
         return null;
     }
 
-    acceptMouseDown(rootSvg, parentSvg, event) {
-        if (this.currentState === this.waitingForPointAState || this.currentState === this.waitingForPointBState) {
-            if (this.currentState) {
-                this.currentState.acceptMouseDown(rootSvg, parentSvg, event);
-            }
-        } else {
-            const mouseX = event.clientX - rootSvg.getBoundingClientRect().left;
-            const mouseY = event.clientY - rootSvg.getBoundingClientRect().top;
-            const hitResult = this.hitTest(mouseX, mouseY);
+    showHandles() {
+        this.topLeft.createVisual(this.rootSvg, this.localGroup);
+        this.topRight.createVisual(this.rootSvg, this.localGroup);
+        this.bottomLeft.createVisual(this.rootSvg, this.localGroup);
+        this.bottomRight.createVisual(this.rootSvg, this.localGroup);
 
-            if (hitResult instanceof PointConstruction) {
-                console.log('RectangularConstruction: Hit on corner point handle, delegating to point.');
-                if (!this.selected) {
-                    this.select();
-                }
-                hitResult.acceptMouseDown(rootSvg, parentSvg, event);
-                event.isHandled = true;
-            } else if (hitResult === this) {
-                console.log('RectangularConstruction: Hit on body, initiating drag of rectangle (future state).');
-                this.select();
-                event.isHandled = true;
-            } else {
-                // console.log('RectangularConstruction: Clicked outside of this rectangle, no action.');
-            }
-        }
+        this.topLeft.updateVisual();
+        this.topRight.updateVisual();
+        this.bottomLeft.updateVisual();
+        this.bottomRight.updateVisual();
+        console.log('RectangularConstruction: Handles shown.');
     }
 
-    acceptMouseMove(rootSvg, parentSvg, event) {
-        if (this.currentState) {
-            this.currentState.acceptMouseMove(rootSvg, parentSvg, event);
-        }
-    }
-
-    acceptMouseUp(rootSvg, parentSvg, event) {
-        if (this.currentState) {
-            this.currentState.acceptMouseUp(rootSvg, parentSvg, event);
-        }
-    }
-
-    acceptMouseClick(rootSvg, parentSvg, event) {
-        if (this.currentState) {
-            if (typeof this.currentState.acceptMouseClick === 'function') {
-                this.currentState.acceptMouseClick(rootSvg, parentSvg, event);
-            }
-        }
-    }
-
-    updateVisual() {
-        if (this._implement) {
-            this._implement.data.selected = this.selected;
-            this._implement.updateVisual();
-        }
-        if (this.topLeft) this.topLeft.updateVisual();
-        if (this.topRight) this.topRight.updateVisual();
-        if (this.bottomLeft) this.bottomLeft.updateVisual();
-        if (this.bottomRight) this.bottomRight.updateVisual();
-    }
-
-    stop(rootSvg) {
-        if (this._implement) {
-            this._implement.removeVisual();
-        }
-        if (this.topLeft) this.topLeft.stop(rootSvg);
-        if (this.topRight) this.topRight.stop(rootSvg);
-        if (this.bottomLeft) this.bottomLeft.stop(rootSvg);
-        if (this.bottomRight) this.bottomRight.stop(rootSvg);
-
-        super.stop();
+    hideHandles() {
+        this.topLeft.removeVisual();
+        this.topRight.removeVisual();
+        this.bottomLeft.removeVisual();
+        this.bottomRight.removeVisual();
+        console.log('RectangularConstruction: Handles hidden.');
     }
 
     isFinished() {
-        return false;
+        return this.currentState === this.waitingForMouseEnterState || this.currentState === this.selectedState || this.currentState === this.hoverState;
     }
 }

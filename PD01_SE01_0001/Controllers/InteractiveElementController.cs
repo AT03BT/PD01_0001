@@ -10,7 +10,7 @@ namespace SE01_UT01_0001.Controllers
 {
     public class InteractiveElementController : Controller
     {
-        public IActionResult app()
+        public IActionResult App()
         {
             return View();
         }
