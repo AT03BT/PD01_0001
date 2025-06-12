@@ -1,6 +1,6 @@
 ﻿/*
     wwwroot/js/interactiveelement/page8/geometricconstruction/pointconstruction.js
-    Version: 1.2.7 // Version increment for robust state constructor calls
+    Version: 1.2.8 // Version increment for ID generation and isAddedToPlane sync
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 */
@@ -226,9 +226,12 @@ class WaitingForMouseDownOnAdditionState extends ConstructionState {
         if (this.hasMouseDown) { // Only yield if a mousedown actually happened in this state
             console.log('PointState (OnAddition WaitingForMouseDown): Mouse up - PointConstruction task finished, yielding control.');
 
-            // The TaskManager will call rootGeometricPlane.addChild with the _implement.
-            // No direct addSelfToPlane call needed here.
+            // Assign ID to implement's data BEFORE yielding. TaskManager uses this ID.
+            if (!this.geometricConstruction._implement.id) {
+                this.geometricConstruction._implement.id = `point-${Date.now()}`;
+            }
 
+            this.geometricConstruction.isAddedToPlane = true; // NEW: Mark as added
             this.geometricConstruction.yieldControl(); // Yield control to TaskManager
             this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState; // Transition to Neutral after yielding
             event.isHandled = true; // Mark event as handled to stop click propagation

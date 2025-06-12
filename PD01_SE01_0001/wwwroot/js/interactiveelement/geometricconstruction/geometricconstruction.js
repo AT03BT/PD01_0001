@@ -1,6 +1,6 @@
 ﻿/*
     wwwroot/js/interactiveelement/page8/geometricconstruction/geometricconstruction.js
-    Version: 0.3.3 // updated import paths and removed rednundat ConstructoinState definition
+    Version: 0.3.4 // Version increment for explicit _implement.data sync
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 
@@ -12,6 +12,7 @@
 
 import { ConstructionState } from '../core/constructionstate.js';
 import { DrawingImplement } from '../core/drawingimplement.js';
+
 
 export class GeometricConstruction {
 
@@ -53,6 +54,7 @@ export class GeometricConstruction {
             if (this._implement) {
                 this._implement.data.stroke = 'blue';
                 this._implement.data.strokeWidth = 2;
+                this._implement.data.selected = true; // NEW: Sync implement's data.selected
                 this._implement.updateVisual();
             }
             if (typeof this.showHandles === 'function') {
@@ -68,6 +70,7 @@ export class GeometricConstruction {
             if (this._implement) {
                 this._implement.data.stroke = 'black';
                 this._implement.data.strokeWidth = 1;
+                this._implement.data.selected = false; // NEW: Sync implement's data.selected
                 this._implement.updateVisual();
             }
             if (typeof this.hideHandles === 'function') {
@@ -140,18 +143,11 @@ export class GeometricConstruction {
     get height() { return this._implement ? this._implement.data.height : 0; }
     set height(value) { if (this._implement) this._implement.data.height = value; }
 
-    /**
-     * Updates the position of the geometric construction.
-     * This method is called by states to change the object's position.
-     * @param {number} x - New X coordinate.
-     * @param {number} y - New Y coordinate.
-     * @param {boolean} isInternal - True if the update is internal (e.g., from a parent), to prevent observer recursion.
-     */
     updatePosition(x, y, isInternal = false) {
         if (this._implement) {
             this._implement.data.x = x;
             this._implement.data.y = y;
-            this._implement.updateVisual(); // Update the visual after data change
+            this._implement.updateVisual();
         }
         if (!isInternal) {
             this.notifyObservers(this, 'moved');
@@ -184,4 +180,15 @@ export class GeometricConstruction {
             console.error("GeometricConstruction: Cannot yield control, taskManager or yieldCurrentTask is not set.");
         }
     }
+}
+
+export class ConstructionState {
+    geometricConstruction = null;
+    acceptMouseDown(rootSvg, parentSvg, event) { }
+    acceptMouseUp(rootSvg, parentSvg, event) { }
+    acceptMouseMove(rootSvg, parentSvg, event) { }
+    acceptMouseClick(rootSvg, parentSvg, event) { }
+    acceptKeyDown(rootSvg, parentSvg, event) { }
+    acceptKeyUp(rootSvg, parentSvg, event) { }
+    acceptKeyPress(rootSvg, parentSvg, event) { }
 }
