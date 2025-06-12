@@ -13,6 +13,7 @@
 import { ConstructionState } from '../core/constructionstate.js'; // Corrected path
 import { DrawingImplement } from '../core/drawingimplement.js';     // Corrected path
 
+
 export class GeometricConstruction {
 
     started = false;
@@ -24,7 +25,7 @@ export class GeometricConstruction {
 
     taskManager = null;
 
-    selected = false; // Is this construction currently selected?
+    selected = false;
 
     _implement = null; // Holds the DrawingImplement instance (model/view part)
 
@@ -51,7 +52,8 @@ export class GeometricConstruction {
             this.selected = true;
             console.log(`${this.constructor.name} selected.`);
             if (this._implement) {
-                this._implement.data.selected = true; // NEW: Sync implement's data.selected
+                this._implement.data.stroke = 'blue';
+                this._implement.data.strokeWidth = 2;
                 this._implement.updateVisual(); // Force visual update to selected colors
             }
             // Add any selection handles or visual cues here
@@ -66,7 +68,9 @@ export class GeometricConstruction {
             this.selected = false;
             console.log(`${this.constructor.name} deselected.`);
             if (this._implement) {
-                this._implement.data.selected = false; // NEW: Sync implement's data.selected
+                this._implement.data.stroke = 'black';
+                this._implement.data.strokeWidth = 1;
+                this._implement.data.selected = false; // Sync implement's data.selected
                 // No immediate updateVisual here; the state transition to NeutralState will call it.
             }
             // Remove any selection handles or visual cues here
@@ -74,12 +78,11 @@ export class GeometricConstruction {
                 this.hideHandles();
             }
 
-            // NEW: Explicitly transition to NeutralState upon deselection
+            // Explicitly transition to NeutralState upon deselection
             // This ensures the visual updates correctly based on the neutral state.
             // This relies on the specific GeometricConstruction (e.g., PointConstruction)
             // having its 'waitingForMouseEnterState' property available.
-            // This is safer to do from the GeometricPlane, but adding here as a fallback/immediate fix.
-            if (this.waitingForMouseEnterState) { // Check if this state exists (for PointConstruction)
+            if (this.waitingForMouseEnterState) {
                 this.currentState = this.waitingForMouseEnterState;
                 this.updateVisual(); // Force visual update to neutral colors
             } else {
@@ -186,7 +189,6 @@ export class GeometricConstruction {
     }
 
     yieldControl() {
-        // This method relies on TaskManager being set
         if (this.taskManager && typeof this.taskManager.yieldCurrentTask === 'function') {
             this.taskManager.yieldCurrentTask(this); // Pass 'this' as the task that is yielding
         } else {
@@ -194,14 +196,4 @@ export class GeometricConstruction {
         }
     }
 }
-
-export class ConstructionState {
-    geometricConstruction = null;
-    acceptMouseDown(rootSvg, parentSvg, event) { }
-    acceptMouseUp(rootSvg, parentSvg, event) { }
-    acceptMouseMove(rootSvg, parentSvg, event) { }
-    acceptMouseClick(rootSvg, parentSvg, event) { }
-    acceptKeyDown(rootSvg, parentSvg, event) { }
-    acceptKeyUp(rootSvg, parentSvg, event) { }
-    acceptKeyPress(rootSvg, parentSvg, event) { }
-}
+// REMOVED from here: export class ConstructionState { ... }

@@ -8,9 +8,10 @@
     ===============
 */
 
-import { GeometricConstruction, ConstructionState } from './geometricconstruction.js'; // Corrected path
-// import { PointConstruction } from './pointconstruction.js'; // REMOVED - not directly used here
-import { DrawingImplement } from '../core/drawingimplement.js'; // Corrected path
+import { ConstructionState } from '../core/constructionstate.js'; // CORRECTED PATH: Imports ConstructionState from the 'core' folder
+import { GeometricConstruction } from './geometricconstruction.js'; // This path is correct
+import { PointConstruction } from './pointconstruction.js'; // This path is correct
+import { DrawingImplement } from '../core/drawingimplement.js'; // This path is correct
 
 // States for GeometricPlane
 class GeometricPlaneIdleState extends ConstructionState {

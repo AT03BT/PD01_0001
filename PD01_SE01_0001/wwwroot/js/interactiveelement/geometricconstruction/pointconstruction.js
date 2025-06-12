@@ -1,12 +1,12 @@
 ﻿/*
     wwwroot/js/interactiveelement/geometricconstruction/pointconstruction.js
-    Version: 1.2.9 // Version increment for refined initial visual state and ID setting
+    Version: 1.2.10 // Version increment for explicit updateVisual after state changes
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 */
 
-import { GeometricConstruction, ConstructionState } from './geometricconstruction.js'; // Corrected path
-import { PointImplement } from '../implements/pointimplement.js'; // Corrected path
+import { GeometricConstruction, ConstructionState } from './geometricconstruction.js';
+import { PointImplement } from '../implements/pointimplement.js';
 
 // --- PointConstruction States ---
 
@@ -25,6 +25,7 @@ class WaitingForMouseEnterState extends ConstructionState {
         if (this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
             this.geometricConstruction.select();
             this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseUpOnDragState;
+            this.geometricConstruction.updateVisual(); // NEW: Update visual after state change
             console.log('PointState (Neutral): Mouse down - Hit, transitioning to WaitingForMouseUpOnDragState (for drag)');
         } else {
             // Not a hit, no action for this point. GeometricPlane will handle deselecting others.
@@ -39,6 +40,7 @@ class WaitingForMouseEnterState extends ConstructionState {
         if (this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
             if (!this.geometricConstruction.selected) {
                 this.geometricConstruction.currentState = this.geometricConstruction.hoverState;
+                this.geometricConstruction.updateVisual(); // NEW: Update visual after state change
                 console.log('PointState (Neutral): Mouse over - Hit, transitioning to HoverState');
             }
         }
@@ -55,6 +57,7 @@ class WaitingForMouseEnterState extends ConstructionState {
         if (this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
             this.geometricConstruction.select();
             this.geometricConstruction.currentState = this.geometricConstruction.selectedState;
+            this.geometricConstruction.updateVisual(); // NEW: Update visual after state change
             console.log('PointState (Neutral): Mouse click - Hit, transitioning to SelectedState.');
         } else {
             // Not a hit, no action for this point. GeometricPlane will handle deselecting others.
@@ -78,11 +81,13 @@ class HoverState extends ConstructionState {
         if (this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
             this.geometricConstruction.select();
             this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseUpOnDragState;
+            this.geometricConstruction.updateVisual(); // NEW: Update visual after state change
             console.log('PointState (Hover): Mouse down - Hit, transitioning to WaitingForMouseUpOnDragState (for drag)');
         } else {
             this.geometricConstruction.deselect();
-            // Deselect already calls updateVisual and changes state to WaitingForMouseEnterState
-            console.log('PointState (Hover): Mouse down - Not a hit, transitioned to NeutralState');
+            this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState;
+            this.geometricConstruction.updateVisual(); // NEW: Update visual after state change
+            console.log('PointState (Hover): Mouse down - Not a hit, transitioning to NeutralState');
         }
     }
 
@@ -93,7 +98,8 @@ class HoverState extends ConstructionState {
 
         if (!this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
             this.geometricConstruction.deselect();
-            // Deselect already calls updateVisual and changes state to WaitingForMouseEnterState
+            this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState;
+            this.geometricConstruction.updateVisual(); // NEW: Update visual after state change
             console.log('PointState (Hover): Mouse off - No hit, transitioning to NeutralState');
         } else {
             this.geometricConstruction.updateVisual(); // Still hovering, ensure visual is correct
@@ -111,10 +117,12 @@ class HoverState extends ConstructionState {
         if (this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
             this.geometricConstruction.select();
             this.geometricConstruction.currentState = this.geometricConstruction.selectedState;
+            this.geometricConstruction.updateVisual(); // NEW: Update visual after state change
             console.log('PointState (Hover): Mouse click - Hit, transitioning to SelectedState.');
         } else {
             this.geometricConstruction.deselect();
-            // Deselect already calls updateVisual and changes state to WaitingForMouseEnterState
+            this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState;
+            this.geometricConstruction.updateVisual(); // NEW: Update visual after state change
             console.log('PointState (Hover): Mouse click - Not a hit, transitioning to NeutralState');
         }
     }
@@ -135,6 +143,7 @@ class SelectedState extends ConstructionState {
         const hitRadius = 8;
         if (this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
             this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseUpOnDragState;
+            this.geometricConstruction.updateVisual(); // NEW: Update visual after state change
             console.log('PointState (Selected): Mouse down - Hit, transitioning to WaitingForMouseUpOnDragState (for drag)');
         } else {
             // Clicked outside the selected point. GeometricPlane will handle deselect.
@@ -168,7 +177,6 @@ class EnqueuedForDrawingState extends ConstructionState {
         this.geometricConstruction.y = event.clientY - rootSvg.getBoundingClientRect().top;
         if (!this.geometricConstruction.visualElement) {
             this.geometricConstruction.createVisual(rootSvg, parentSvg);
-            // NEW: Ensure initial visual is black while drawing
             this.geometricConstruction._implement.data.fill = 'black';
         }
         this.geometricConstruction.updateVisual();
@@ -181,7 +189,6 @@ class EnqueuedForDrawingState extends ConstructionState {
         this.geometricConstruction.y = event.clientY - rootSvg.getBoundingClientRect().top;
         if (!this.geometricConstruction.visualElement) {
             this.geometricConstruction.createVisual(rootSvg, parentSvg);
-            // NEW: Ensure initial visual is black while drawing
             this.geometricConstruction._implement.data.fill = 'black';
         }
         this.geometricConstruction.updateVisual();
@@ -196,36 +203,33 @@ class WaitingForMouseDownOnAdditionState extends ConstructionState {
     constructor(geometricConstruction) {
         super();
         this.geometricConstruction = geometricConstruction;
-        this.hasMouseDown = false; // Flag to track if mousedown occurred in this state
+        this.hasMouseDown = false;
     }
 
     acceptMouseDown(rootSvg, parentSvg, event) {
         if (!this.geometricConstruction.visualElement) {
             this.geometricConstruction.createVisual(rootSvg, parentSvg);
-            // NEW: Ensure visual is black on mousedown for placement
             this.geometricConstruction._implement.data.fill = 'black';
         }
 
         var x = event.clientX - rootSvg.getBoundingClientRect().left;
         var y = event.clientY - rootSvg.getBoundingClientRect().top;
-        this.geometricConstruction.updatePosition(x, y); // Finalize position on click
-        this.hasMouseDown = true; // Mark that mousedown has occurred
+        this.geometricConstruction.updatePosition(x, y);
+        this.hasMouseDown = true;
         console.log('PointState (OnAddition WaitingForMouseDown): Mouse down - point placed. Waiting for MouseUp to finalize task.');
-        event.isHandled = true; // Mark as handled because this is the primary click for placement
+        event.isHandled = true;
     }
 
     acceptMouseMove(rootSvg, parentSvg, event) {
-        // Only update position if mousedown has NOT occurred.
-        // If mousedown has occurred, we are in a drag-like preview before mouseup.
         if (!this.hasMouseDown) {
             var x = event.clientX - rootSvg.getBoundingClientRect().left;
             var y = event.clientY - rootSvg.getBoundingClientRect().top;
-            this.geometricConstruction.updatePosition(x, y); // Live update position before click
+            this.geometricConstruction.updatePosition(x, y);
         }
     }
 
     acceptMouseUp(rootSvg, parentSvg, event) {
-        if (this.hasMouseDown) { // Only yield if a mousedown actually happened in this state
+        if (this.hasMouseDown) {
             console.log('PointState (OnAddition WaitingForMouseDown): Mouse up - PointConstruction task finished, yielding control.');
 
             // Assign ID to implement's data BEFORE yielding. TaskManager uses this ID.
@@ -233,23 +237,18 @@ class WaitingForMouseDownOnAdditionState extends ConstructionState {
                 this.geometricConstruction._implement.id = `point-${Date.now()}`;
             }
 
-            this.geometricConstruction.isAddedToPlane = true; // NEW: Mark as added
-            this.geometricConstruction.yieldControl(); // Yield control to TaskManager
+            this.geometricConstruction.isAddedToPlane = true;
+            this.geometricConstruction.yieldControl();
 
-            // NEW: Do NOT transition to NeutralState immediately here. Let the GeometricPlane's
-            // click event handle the actual selection or just let it stay neutral.
-            // The purpose of this state is to finish the drawing task, not to set the post-drawing interactive state.
-            // this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState; // REMOVED
-            event.isHandled = true; // NEW: Crucial to prevent immediate selection by subsequent click event
+            // REMOVED: this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState; // REMOVED
+            event.isHandled = true;
         } else {
             // console.log('PointState (OnAddition WaitingForMouseDown): Mouse up - no mousedown detected in this state, no action.');
         }
     }
 
     acceptMouseClick(rootSvg, parentSvg, event) {
-        // If this click event is not handled by mouseup, ensure it's marked as handled
-        // to prevent immediate selection when the point is just placed.
-        event.isHandled = true; // NEW: Mark event as handled to stop click propagation
+        event.isHandled = true;
     }
 }
 
@@ -266,6 +265,7 @@ class WaitingForMouseUpOnDragState extends ConstructionState {
         const mouseY = event.clientY - rootSvg.getBoundingClientRect().top;
         this.geometricConstruction.updatePosition(mouseX, mouseY);
         this.geometricConstruction.currentState = this.geometricConstruction.selectedState; // Transition to Selected after drag
+        this.geometricConstruction.updateVisual(); // NEW: Update visual after state change
         console.log('PointState: Mouse up - transitioned to SelectedState, drag stopped');
     }
 
@@ -293,7 +293,6 @@ export class PointConstruction extends GeometricConstruction {
 
     _implement = null;
 
-    // isAddedToPlane is now a flag on the Construction itself (not its implement's data)
     isAddedToPlane = false;
 
     constructor(config = {}) {
@@ -325,7 +324,7 @@ export class PointConstruction extends GeometricConstruction {
             this._implement.removeVisual();
         }
         this.isAddedToPlane = false;
-        this._implement.id = null; // NEW: Reset _implement ID for a new drawing cycle
+        this._implement.id = null; // Reset _implement ID for a new drawing cycle
         console.log('PointConstruction: Started drawing, entered EnqueuedForDrawingState.');
     }
 

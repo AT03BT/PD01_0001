@@ -1,6 +1,6 @@
 ﻿/*
     wwwroot/js/interactiveelement/implements/pointimplement.js
-    Version: 0.1.6 // Version increment for debugging fill color and correct visual logic
+    Version: 0.1.7 // Version increment for debugging fill color with distinct value
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 
@@ -8,7 +8,7 @@
     ===============
 */
 
-import { DrawingImplement } from '../core/drawingimplement.js'; // Corrected path
+import { DrawingImplement } from '../core/drawingimplement.js';
 
 export class PointImplement extends DrawingImplement {
     constructor(id, config = {}) {
@@ -17,15 +17,14 @@ export class PointImplement extends DrawingImplement {
         this.data.x = config.x || 0;
         this.data.y = config.y || 0;
         this.data.r = config.r || 3;
-        this.data.fill = config.fill || 'black'; // Default initial fill
-        this.data.stroke = config.stroke || 'black'; // Default initial stroke
-        this.data.strokeWidth = config.strokeWidth || 1; // Default initial stroke width
-        this.data.class = config.class || 'block-point'; // CSS class
+        this.data.fill = config.fill || 'black';
+        this.data.stroke = config.stroke || 'black';
+        this.data.strokeWidth = config.strokeWidth || 1;
+        this.data.class = config.class || 'block-point';
 
-        // These properties will be passed via this.data from PointConstruction.updateVisual()
-        this.data.selected = false; // Will be boolean from GeometricConstruction.selected
-        this.data.currentState = null; // Will be reference to current state object
-        this.data.hoverState = null; // Will be reference to hoverState object
+        this.data.selected = false;
+        this.data.currentState = null;
+        this.data.hoverState = null;
     }
 
     createVisual(rootSvg, localGroup, attributes = {}) {
@@ -42,15 +41,15 @@ export class PointImplement extends DrawingImplement {
                 this.localGroup.appendChild(this.visualElement);
             } else if (this.rootSvg) {
                 this.rootSvg.appendChild(this.visualElement);
-                console.warn(`PointImplement: No localGroup for ${this.id || 'null'}. Appending to rootSvg.`); // Log ID
+                console.warn(`PointImplement: No localGroup for ${this.id || 'null'}. Appending to rootSvg.`);
             } else {
-                console.error(`PointImplement: Cannot append visual for ${this.id || 'null'}. Neither localGroup nor rootSvg available.`); // Log ID
+                console.error(`PointImplement: Cannot append visual for ${this.id || 'null'}. Neither localGroup nor rootSvg available.`);
             }
         }
         for (const key in attributes) {
             this.visualElement.setAttribute(key, attributes[key]);
         }
-        this.updateVisual(); // Update attributes and make visible.
+        this.updateVisual();
         this.visualElement.setAttribute('visibility', 'visible');
     }
 
@@ -63,19 +62,17 @@ export class PointImplement extends DrawingImplement {
             let newStroke = this.data.stroke;
             let newStrokeWidth = this.data.strokeWidth;
 
-            // Apply visual rules based on state
             if (this.data.selected) {
                 newStroke = 'blue';
                 newStrokeWidth = 2;
-                newFill = 'black'; // Selected object has black fill by default
+                newFill = 'black';
             } else {
-                newStroke = 'black'; // Default stroke for non-selected
+                newStroke = 'black';
                 newStrokeWidth = 1;
-                // Check if it's currently in HoverState (via the passed state reference)
-                if (this.data.currentState && this.data.currentState.constructor.name === 'HoverState') { // Check constructor name directly
-                    newFill = 'grey'; // Hover fill
+                if (this.data.currentState && this.data.currentState.constructor.name === 'HoverState') {
+                    newFill = 'fuchsia'; // MODIFIED: Very distinct FUCHSIA for testing hover
                 } else {
-                    newFill = 'black'; // Default fill when not selected and not hovered
+                    newFill = 'black';
                 }
             }
 
@@ -83,7 +80,7 @@ export class PointImplement extends DrawingImplement {
             this.visualElement.style.stroke = newStroke;
             this.visualElement.style.strokeWidth = newStrokeWidth.toString();
 
-            console.log(`PointImplement: Updated visual for ID ${this.id || 'null'}. Selected: ${this.data.selected}, CurrentState: ${this.data.currentState ? this.data.currentState.constructor.name : 'None'}, Applied Fill: ${newFill}, Stroke: ${newStroke}`); // NEW LOG
+            console.log(`PointImplement: Updated visual for ID ${this.id || 'null'}. Selected: ${this.data.selected}, CurrentState: ${this.data.currentState ? this.data.currentState.constructor.name : 'None'}, Applied Fill: ${newFill}, Stroke: ${newStroke}`);
         }
     }
 
