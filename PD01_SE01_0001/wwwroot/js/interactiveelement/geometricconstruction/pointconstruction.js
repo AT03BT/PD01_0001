@@ -1,11 +1,12 @@
 ﻿/*
     wwwroot/js/interactiveelement/geometricconstruction/pointconstruction.js
-    Version: 1.2.14 // Version increment for logger path correction
+    Version: 1.2.15 // Version increment for ConstructionState correction
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 */
 
-import { GeometricConstruction, ConstructionState } from './geometricconstruction.js';
+import { GeometricConstruction } from './geometricconstruction.js'; // Corrected path
+import { ConstructionState } from '../core/constructionstate.js';   // Corrected path
 import { logger, LogLevel } from '../core/logger.js';
 import { PointImplement } from '../implements/pointimplement.js';
 
