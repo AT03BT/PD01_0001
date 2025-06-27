@@ -1,6 +1,6 @@
 ﻿/*
     wwwroot/js/interactiveelement/geometricconstruction/pointconstruction.js
-    Version: 1.2.16 // Version increment for robust _implement ID and visual state syncing
+    Version: 1.2.16 // Final Version Increment for PointConstruction behavior & logging
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 */
@@ -40,7 +40,7 @@ class WaitingForMouseEnterState extends ConstructionState {
         const hitRadius = 8;
 
         if (this.geometricConstruction.hitTest(mouseX, mouseY, hitRadius)) {
-            if (!this.geometricConstruction.selected) {
+            if (!this.geometricConstruction.selected) { // Only go to hover if not already selected
                 this.geometricConstruction.currentState = this.geometricConstruction.hoverState;
                 this.geometricConstruction.updateVisual(); // Update visual after state change
                 logger.debug('PointState (Neutral): Mouse over - Hit, transitioning to HoverState');
@@ -234,17 +234,12 @@ class WaitingForMouseDownOnAdditionState extends ConstructionState {
         if (this.hasMouseDown) {
             logger.debug('PointState (OnAddition WaitingForMouseDown): Mouse up - PointConstruction task finished, yielding control.');
 
-            // Assign ID to implement's data BEFORE yielding. TaskManager uses this ID.
-            // This is already done in PointConstruction constructor if ID is null, or in startDrawing if not.
-            // This 'if' check is robust.
-            if (!this.geometricConstruction._implement.id) {
-                this.geometricConstruction._implement.id = `point-${Date.now()}`;
-            }
+            // Assign ID to implement's data. This ID is generated in the PointConstruction constructor now.
+            // No explicit check for null ID here needed.
 
             this.geometricConstruction.isAddedToPlane = true;
             this.geometricConstruction.yieldControl();
 
-            // NEW: Explicitly transition to NeutralState immediately after yielding
             this.geometricConstruction.currentState = this.geometricConstruction.waitingForMouseEnterState;
             this.geometricConstruction.updateVisual(); // NEW: Update visual after state change
             event.isHandled = true;
@@ -304,7 +299,7 @@ export class PointConstruction extends GeometricConstruction {
     constructor(config = {}) {
         super(config);
 
-        this._implement = new PointImplement(null, {
+        this._implement = new PointImplement(`point-${Date.now()}`, { // Generate ID here immediately
             x: 0, y: 0,
             rootSvg: this.rootSvg,
             localGroup: this.localGroup
@@ -330,7 +325,8 @@ export class PointConstruction extends GeometricConstruction {
             this._implement.removeVisual();
         }
         this.isAddedToPlane = false;
-        this._implement.id = null; // Reset _implement ID for a new drawing cycle
+        // Re-generate ID for a new drawing cycle, after initial constructor ID setup
+        this._implement.id = `point-${Date.now()}`;
         logger.debug('PointConstruction: Started drawing, entered EnqueuedForDrawingState.');
     }
 
