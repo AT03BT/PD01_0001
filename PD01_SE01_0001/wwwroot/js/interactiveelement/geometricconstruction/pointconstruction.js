@@ -299,7 +299,8 @@ export class PointConstruction extends GeometricConstruction {
     constructor(config = {}) {
         super(config);
 
-        this._implement = new PointImplement(`point-${Date.now()}`, { // Generate ID here immediately
+        // Generate ID for _implement immediately in the constructor
+        this._implement = new PointImplement(`point-${Date.now()}`, { // NEW: Generate ID here
             x: 0, y: 0,
             rootSvg: this.rootSvg,
             localGroup: this.localGroup
