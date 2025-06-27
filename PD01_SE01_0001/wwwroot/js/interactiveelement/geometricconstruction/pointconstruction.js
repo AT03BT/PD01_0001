@@ -299,8 +299,7 @@ export class PointConstruction extends GeometricConstruction {
     constructor(config = {}) {
         super(config);
 
-        // Generate ID for _implement immediately in the constructor
-        this._implement = new PointImplement(`point-${Date.now()}`, { // NEW: Generate ID here
+        this._implement = new PointImplement(`point-${Date.now()}`, { // Generate ID here immediately
             x: 0, y: 0,
             rootSvg: this.rootSvg,
             localGroup: this.localGroup
@@ -326,8 +325,7 @@ export class PointConstruction extends GeometricConstruction {
             this._implement.removeVisual();
         }
         this.isAddedToPlane = false;
-        // Re-generate ID for a new drawing cycle, after initial constructor ID setup
-        this._implement.id = `point-${Date.now()}`;
+        this._implement.id = `point-${Date.now()}`; // Re-generate ID for a new drawing cycle, after initial constructor ID setup
         logger.debug('PointConstruction: Started drawing, entered EnqueuedForDrawingState.');
     }
 
