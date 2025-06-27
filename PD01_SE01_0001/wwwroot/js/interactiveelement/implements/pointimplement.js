@@ -1,6 +1,6 @@
 ﻿/*
     wwwroot/js/interactiveelement/implements/pointimplement.js
-    Version: 0.1.7 // Version increment for debugging fill color with distinct value
+    Version: 0.1.8 // Version increment for correct currentState comparison
     (c) 2025, Minh Tri Tran, with assistance from Google's Gemini - Licensed under CC BY 4.0
     https://creativecommons.org/licenses/by/4.0/
 
@@ -58,21 +58,21 @@ export class PointImplement extends DrawingImplement {
             this.visualElement.setAttribute('cx', this.data.x.toString());
             this.visualElement.setAttribute('cy', this.data.y.toString());
 
-            let newFill = this.data.fill;
-            let newStroke = this.data.stroke;
-            let newStrokeWidth = this.data.strokeWidth;
+            let newFill = 'black'; // Default to black
+            let newStroke = 'black';
+            let newStrokeWidth = 1;
 
             if (this.data.selected) {
                 newStroke = 'blue';
                 newStrokeWidth = 2;
-                newFill = 'black';
+                newFill = 'black'; // Selected object has black fill
             } else {
-                newStroke = 'black';
-                newStrokeWidth = 1;
-                if (this.data.currentState && this.data.currentState.constructor.name === 'HoverState') {
-                    newFill = 'fuchsia'; // MODIFIED: Very distinct FUCHSIA for testing hover
+                // Not selected, check hover
+                if (this.data.currentState && this.data.hoverState && // Ensure states are defined
+                    this.data.currentState.constructor.name === this.data.hoverState.constructor.name) { // MODIFIED: Compare constructor names
+                    newFill = 'fuchsia'; // Hover fill
                 } else {
-                    newFill = 'black';
+                    newFill = 'black'; // Default fill when not selected and not hovered
                 }
             }
 
